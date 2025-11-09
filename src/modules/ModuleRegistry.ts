@@ -85,24 +85,6 @@ export const moduleRegistry: ModuleConfig[] = [
     category: 'image',
     version: '1.0.0',
     author: '梧桐工具箱团队'
-  },
-  {
-    id: 'example-plugin',
-    name: '示例插件 - 记事本',
-    description: '展示插件 API 使用方法的示例插件',
-    icon: '📝',
-    category: 'other',
-    version: '1.0.0',
-    author: '梧桐工具箱团队'
-  },
-  {
-    id: 'plugin-store',
-    name: '插件商店',
-    description: '浏览、安装和管理插件',
-    icon: '🔌',
-    category: 'other',
-    version: '1.0.0',
-    author: '梧桐工具箱团队'
   }
 ]
 
