@@ -77,12 +77,10 @@ const filteredTabs = computed(() => {
 })
 
 const moduleComponents = {
-  'calculator': defineAsyncComponent(() => import('./modules/calculator/index.ts')),
+  'shortcut-commands': defineAsyncComponent(() => import('./modules/shortcut-commands/index.ts')),
   'color-picker': defineAsyncComponent(() => import('./modules/color-picker/index.ts')),
   'json-tool': defineAsyncComponent(() => import('./modules/json-tool/index.ts')),
   'base64-tool': defineAsyncComponent(() => import('./modules/base64-tool/index.ts')),
-  'url-tool': defineAsyncComponent(() => import('./modules/url-tool/index.ts')),
-  'qrcode': defineAsyncComponent(() => import('./modules/qrcode/index.ts')),
   'semantic-request': defineAsyncComponent(() => import('./modules/semantic-request/index.ts')),
   'xunfei-semantic-request': defineAsyncComponent(() => import('./modules/xunfei-semantic-request/index.ts'))
 }

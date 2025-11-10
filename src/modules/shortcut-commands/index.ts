@@ -1,6 +1,6 @@
 import { defineAsyncComponent } from 'vue'
 
 // 异步加载组件
-const Component = defineAsyncComponent(() => import('./Calculator.vue'))
+const Component = defineAsyncComponent(() => import('./ShortcutCommands.vue'))
 
 export default Component

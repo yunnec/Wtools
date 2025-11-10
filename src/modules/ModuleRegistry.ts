@@ -7,13 +7,22 @@ export interface ModuleConfig {
   name: string
   description: string
   icon: string
-  category: 'file' | 'text' | 'calc' | 'convert' | 'image' | 'other'
+  category: 'file' | 'text' | 'calc' | 'convert' | 'image' | 'other' | 'tool'
   version: string
   author: string
   component?: any
 }
 
 export const moduleRegistry: ModuleConfig[] = [
+  {
+    id: 'shortcut-commands',
+    name: 'ADB快捷指令',
+    description: '一键执行ADB命令，无需记忆复杂指令',
+    icon: '⚡',
+    category: 'tool',
+    version: '1.0.0',
+    author: '梧桐工具箱团队'
+  },
   {
     id: 'xunfei-semantic-request',
     name: '讯飞语义请求',
@@ -33,12 +42,6 @@ export const moduleRegistry: ModuleConfig[] = [
     author: '梧桐工具箱团队'
   },
   {
-    id: 'calculator',
-    name: '计算器',
-    description: '执行基础和高级数学计算',
-    icon: '🧮',
-    category: 'calc',
-    version: '1.0.0',
     author: '梧桐工具箱团队'
   },
   {
@@ -69,20 +72,9 @@ export const moduleRegistry: ModuleConfig[] = [
     author: '梧桐工具箱团队'
   },
   {
-    id: 'url-tool',
-    name: 'URL工具',
-    description: 'URL编码/解码、参数解析',
-    icon: '🔗',
-    category: 'convert',
-    version: '1.0.0',
     author: '梧桐工具箱团队'
   },
   {
-    id: 'qrcode',
-    name: '二维码生成器',
-    description: '生成和解析二维码',
-    icon: '📱',
-    category: 'image',
     version: '1.0.0',
     author: '梧桐工具箱团队'
   }
