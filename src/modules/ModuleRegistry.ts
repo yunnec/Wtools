@@ -42,9 +42,6 @@ export const moduleRegistry: ModuleConfig[] = [
     author: '梧桐工具箱团队'
   },
   {
-    author: '梧桐工具箱团队'
-  },
-  {
     id: 'color-picker',
     name: '颜色选择器',
     description: '选择颜色、生成调色板、格式转换',
@@ -68,13 +65,6 @@ export const moduleRegistry: ModuleConfig[] = [
     description: 'Base64编码和解码',
     icon: '🔐',
     category: 'convert',
-    version: '1.0.0',
-    author: '梧桐工具箱团队'
-  },
-  {
-    author: '梧桐工具箱团队'
-  },
-  {
     version: '1.0.0',
     author: '梧桐工具箱团队'
   }
