@@ -15,6 +15,15 @@ export interface ModuleConfig {
 
 export const moduleRegistry: ModuleConfig[] = [
   {
+    id: 'xunfei-semantic-request',
+    name: '讯飞语义请求',
+    description: '发送文本获取讯飞语义理解结果',
+    icon: '🗣️',
+    category: 'other',
+    version: '1.0.0',
+    author: '梧桐工具箱团队'
+  },
+  {
     id: 'semantic-request',
     name: '自研语义请求',
     description: '发送文本获取语义请求结果',

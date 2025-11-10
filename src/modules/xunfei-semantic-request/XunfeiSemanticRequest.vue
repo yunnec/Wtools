@@ -1,0 +1,663 @@
+<template>
+  <div class="xunfei-semantic-request p-6">
+    <div class="mb-6">
+      <h2 class="text-2xl font-bold text-gray-900 mb-4">讯飞语义请求</h2>
+      <div class="flex gap-2 flex-wrap">
+        <button @click="sendQuery" class="btn-primary" :disabled="!isConnected || !queryText || loading">
+          {{ loading ? '查询中...' : '发送语义查询' }}
+        </button>
+        <button @click="clearAll" class="btn-primary">清空</button>
+        <button @click="clearResult" class="btn-primary" :disabled="!result">清空结果</button>
+        <button v-if="connectionState === 'error' || connectionState === 'disconnected'" @click="autoConnect" class="btn-primary bg-red-500 hover:bg-red-600">
+          {{ connectionState === 'disconnected' ? '重新连接' : '重连' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- 连接状态指示 -->
+    <div class="mb-4">
+      <div class="flex items-center gap-2 p-3 rounded-lg"
+           :class="{
+             'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300': connectionState === 'connected',
+             'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300': connectionState === 'connecting' || connectionState === 'reconnecting',
+             'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300': connectionState === 'error',
+             'bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400': connectionState === 'disconnected'
+           }">
+        <span class="text-2xl">
+          <span v-if="connectionState === 'connected'">✅</span>
+          <span v-else-if="connectionState === 'connecting' || connectionState === 'reconnecting'">⏳</span>
+          <span v-else-if="connectionState === 'error'">❌</span>
+          <span v-else>⚪</span>
+        </span>
+        <div class="flex-1">
+          <div class="font-medium">
+            {{ getStateDescription() }}
+            <span v-if="isConnected" class="text-xs text-green-600 ml-2">● 实时连接</span>
+          </div>
+          <div v-if="reconnectAttempts > 0" class="text-sm">
+            重连次数: {{ reconnectAttempts }}
+          </div>
+          <div v-if="isConnected" class="text-xs text-gray-500 mt-1">
+            连接正常，可直接发送查询
+          </div>
+          <div v-else-if="connectionState === 'disconnected'" class="text-xs text-gray-500 mt-1">
+            连接已断开，请点击右侧按钮重新连接
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <div v-if="error" class="text-sm text-red-600 dark:text-red-400">
+            {{ error }}
+          </div>
+          <div v-if="success && !error" class="text-sm text-green-600 dark:text-green-400">
+            {{ success }}
+          </div>
+          <button
+            v-if="connectionState === 'error' || connectionState === 'disconnected'"
+            @click="autoConnect"
+            :disabled="connecting"
+            class="btn-primary text-sm py-1 px-3 bg-red-500 hover:bg-red-600 disabled:bg-gray-300"
+          >
+            {{ connecting ? '连接中...' : '重新连接' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 双栏布局 -->
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 h-[calc(100vh-12rem)]">
+      <!-- 左侧：输入、配置和历史记录（占2列） -->
+      <div class="lg:col-span-2 flex flex-col space-y-4 h-full">
+        <!-- 输入区域 -->
+        <div class="card">
+          <h3 class="text-lg font-semibold mb-3">查询输入</h3>
+          <textarea
+            ref="queryInputRef"
+            v-model="queryText"
+            class="w-full h-24 p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+            placeholder="请输入要查询的语义文本..."
+            @keydown.enter.ctrl="sendQuery"
+          ></textarea>
+          <div class="mt-2 text-sm text-gray-600 flex justify-between">
+            <span>字符数: {{ queryText.length }}</span>
+            <span class="text-xs text-gray-500">提示: Ctrl+Enter 快速发送</span>
+          </div>
+        </div>
+
+        <!-- API配置信息 -->
+        <div class="card bg-blue-50 dark:bg-blue-900/20">
+          <h3 class="text-lg font-semibold mb-2 text-blue-900 dark:text-blue-100">API配置</h3>
+          <div class="space-y-2 text-sm font-mono">
+            <div>
+              <span class="text-gray-600 dark:text-gray-400">应用ID (appId):</span>
+              <div class="mt-1">
+                <input
+                  v-model="appId"
+                  type="text"
+                  class="w-full px-3 py-2 border border-gray-300 rounded bg-white dark:bg-gray-800 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="请输入应用ID"
+                />
+              </div>
+            </div>
+            <div>
+              <span class="text-gray-600 dark:text-gray-400">API密钥 (APIKey):</span>
+              <div class="mt-1">
+                <input
+                  v-model="apiKey"
+                  type="password"
+                  class="w-full px-3 py-2 border border-gray-300 rounded bg-white dark:bg-gray-800 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="请输入API密钥"
+                />
+              </div>
+            </div>
+            <div>
+              <span class="text-gray-600 dark:text-gray-400">认证ID (authId):</span>
+              <div class="mt-1">
+                <input
+                  v-model="authId"
+                  type="text"
+                  class="w-full px-3 py-2 border border-gray-300 rounded bg-white dark:bg-gray-800 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="请输入认证ID"
+                />
+              </div>
+            </div>
+            <div class="mt-3 text-xs text-gray-500">
+              💡 API密钥将保存在本地浏览器存储中，请注意安全
+            </div>
+          </div>
+        </div>
+
+        <!-- 历史记录 -->
+        <div class="card flex-1 flex flex-col overflow-hidden min-h-0">
+          <h3 class="text-lg font-semibold mb-3">历史记录</h3>
+          <div v-if="history.length > 0" class="flex-1 overflow-y-auto space-y-2 pr-2">
+            <div
+              v-for="(item, index) in history"
+              :key="index"
+              class="p-3 bg-gray-50 dark:bg-gray-800 rounded cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              @click="loadFromHistory(item)"
+            >
+              <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                {{ new Date(item.timestamp).toLocaleString() }}
+              </div>
+              <div class="text-sm font-mono mb-1 line-clamp-2">
+                {{ item.query }}
+              </div>
+              <div class="flex items-center justify-between text-xs">
+                <span :class="{
+                  'text-green-600': item.status === 'success',
+                  'text-red-600': item.status === 'error',
+                  'text-yellow-600': item.status === 'timeout'
+                }">
+                  {{ item.status === 'success' ? '成功' : item.status === 'error' ? '失败' : '超时' }}
+                </span>
+                <span class="text-gray-500">响应: {{ item.duration }}ms</span>
+              </div>
+            </div>
+          </div>
+          <div v-else class="flex-1 flex items-center justify-center text-gray-400 text-sm">
+            暂无历史记录
+          </div>
+          <button
+            v-if="history.length > 0"
+            @click="clearHistory"
+            class="btn-primary mt-3 w-full"
+          >
+            清空历史记录
+          </button>
+        </div>
+      </div>
+
+      <!-- 右侧：响应结果（占3列，最大化显示） -->
+      <div class="lg:col-span-3 flex flex-col h-full">
+        <div class="card flex-1 flex flex-col overflow-hidden min-h-0">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-lg font-semibold">响应结果</h3>
+            <div v-if="result" class="flex gap-2">
+              <button @click="copyResult" class="btn-primary text-sm py-1 px-3">
+                复制结果
+              </button>
+              <button @click="downloadResult" class="btn-primary text-sm py-1 px-3">
+                下载JSON
+              </button>
+            </div>
+          </div>
+
+          <div v-if="loading" class="flex-1 flex items-center justify-center">
+            <div class="text-center">
+              <div class="text-4xl mb-4">⏳</div>
+              <div class="text-gray-600">正在处理请求...</div>
+              <div class="text-sm text-gray-500 mt-2">
+                连接状态: {{ getStateDescription() }}
+              </div>
+            </div>
+          </div>
+
+          <div v-else-if="error" class="flex-1 flex items-center justify-center">
+            <div class="text-center">
+              <div class="text-4xl mb-4">❌</div>
+              <div class="text-red-600 mb-2">发生错误</div>
+              <div class="text-sm text-gray-600">{{ error }}</div>
+            </div>
+          </div>
+
+          <div v-else-if="result" class="flex-1 overflow-y-auto pr-2">
+            <div class="space-y-4">
+              <!-- 当前查询 -->
+              <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                <div class="text-sm text-blue-600 dark:text-blue-300 mb-2">当前查询</div>
+                <div class="font-mono text-sm">{{ currentQuery }}</div>
+              </div>
+
+              <!-- 响应内容 -->
+              <div>
+                <div class="text-sm text-gray-600 mb-2">响应内容 ({{ responseCount }}条消息)</div>
+                <pre class="bg-gray-900 text-green-400 p-4 rounded-lg text-sm font-mono overflow-x-auto whitespace-pre-wrap">{{
+                  formattedResult
+                }}</pre>
+              </div>
+
+              <!-- 统计信息 -->
+              <div class="grid grid-cols-3 gap-4">
+                <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded text-center">
+                  <div class="text-2xl font-bold text-blue-600">{{ result.duration }}ms</div>
+                  <div class="text-sm text-gray-600">响应时间</div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded text-center">
+                  <div class="text-2xl font-bold text-green-600">{{ responseCount }}</div>
+                  <div class="text-sm text-gray-600">消息数量</div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-800 p-3 rounded text-center">
+                  <div class="text-2xl font-bold text-purple-600">{{ characterCount }}</div>
+                  <div class="text-sm text-gray-600">字符数</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-else class="flex-1 flex items-center justify-center text-gray-400">
+            <div class="text-center">
+              <div class="text-4xl mb-4">📝</div>
+              <div>请先建立连接并发送查询</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { eventBus } from '../../core/event'
+import { XunfeiApiService, type HistoryRecord, type WebSocketConnectionState, type WebSocketMessage } from './services/xunfei-api.service'
+
+// 响应式数据
+const queryText = ref('')
+const currentQuery = ref('')
+const result = ref<any>(null)
+const loading = ref(false)
+const error = ref('')
+const success = ref('')
+
+// 输入框引用
+const queryInputRef = ref<HTMLTextAreaElement | null>(null)
+
+// WebSocket相关状态
+const connectionState = ref<WebSocketConnectionState>('disconnected')
+const isConnected = ref(false)
+const connecting = ref(false)
+const reconnectAttempts = ref(0)
+
+// API配置
+const appId = ref('d97460e4')
+const apiKey = ref('33efdde7d2f0d9ea0cd86f4ebb10935e')
+const authId = ref('wttest110322b327287039cd92b4c51n')
+const dataType = ref('text')
+const interactMode = ref('continuous')
+const resultLevel = ref('complete')
+const scene = ref('main')
+
+// 历史记录
+const history = ref<HistoryRecord[]>([])
+
+// API服务实例
+let apiService: XunfeiApiService | null = null
+
+// 计算属性
+const formattedResult = computed(() => {
+  if (!result.value) return ''
+  // 如果结果是数组，只显示每个消息的 content 字段
+  if (Array.isArray(result.value)) {
+    return result.value.map(msg => {
+      if (typeof msg === 'object' && msg !== null && 'content' in msg) {
+        return msg.content as string
+      }
+      return JSON.stringify(msg, null, 2)
+    }).join('\n\n')
+  }
+  // 如果不是数组，直接返回
+  return JSON.stringify(result.value, null, 2)
+})
+
+const responseCount = computed(() => {
+  if (!result.value) return 0
+  return Array.isArray(result.value) ? result.value.length : 1
+})
+
+const characterCount = computed(() => {
+  return formattedResult.value.length
+})
+
+// 方法
+const getStateDescription = () => {
+  const descriptions: Record<WebSocketConnectionState, string> = {
+    disconnected: '未连接',
+    connecting: '连接中',
+    connected: '已连接',
+    reconnecting: '重连中',
+    error: '连接错误'
+  }
+  return descriptions[connectionState.value] || '未知状态'
+}
+
+const handleConnect = async () => {
+  try {
+    if (!appId.value || !apiKey.value || !authId.value) {
+      error.value = '请填写完整的API配置信息'
+      return
+    }
+
+    connecting.value = true
+    error.value = ''
+    success.value = '正在建立连接...'
+
+    // 保存API配置
+    localStorage.setItem('xunfei-app-id', appId.value)
+    localStorage.setItem('xunfei-api-key', apiKey.value)
+    localStorage.setItem('xunfei-auth-id', authId.value)
+
+    // 创建API服务实例
+    apiService = new XunfeiApiService({
+      apiKey: apiKey.value,
+      authId: authId.value,
+      dataType: dataType.value,
+      interactMode: interactMode.value,
+      resultLevel: resultLevel.value,
+      scene: scene.value,
+      closeDelay: '100',
+      deviceId: '00000000000000000000000000000000',
+      speechClientVer: '1.6.0.1_beta',
+      startAsrNum: '1',
+      vin: 'Test_10000001',
+      voiceActiveDetect: 'inactive',
+      aiStatus: ''
+    })
+
+    await apiService.connect(
+      appId.value,
+      (state) => {
+        connectionState.value = state
+        isConnected.value = state === 'connected'
+        connecting.value = state === 'connecting'
+
+        if (state === 'connected') {
+          success.value = '连接建立成功'
+        } else if (state === 'error') {
+          error.value = '连接失败，请检查配置'
+        }
+      }
+    )
+
+    success.value = '连接建立成功'
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : '连接失败'
+    connectionState.value = 'error'
+    isConnected.value = false
+  } finally {
+    connecting.value = false
+  }
+}
+
+const handleDisconnect = () => {
+  if (apiService) {
+    apiService.disconnect()
+    connectionState.value = 'disconnected'
+    isConnected.value = false
+    success.value = '已断开连接'
+  }
+}
+
+const sendQuery = async () => {
+  console.log('=== [sendQuery] 开始发送查询 ===')
+  console.log('[sendQuery] apiService存在:', !!apiService)
+  console.log('[sendQuery] isConnected:', isConnected.value)
+  console.log('[sendQuery] queryText:', queryText.value)
+
+  if (!apiService) {
+    console.error('[sendQuery] 错误: apiService不存在')
+    error.value = 'API服务未初始化'
+    return
+  }
+
+  if (!queryText.value) {
+    console.error('[sendQuery] 错误: 查询内容为空')
+    error.value = '请输入查询内容'
+    return
+  }
+
+  if (!isConnected.value) {
+    console.error('[sendQuery] 错误: WebSocket未连接, connectionState:', connectionState.value)
+    error.value = 'WebSocket未连接，请检查网络或点击重连'
+    return
+  }
+
+  try {
+    console.log('[sendQuery] 设置加载状态')
+    loading.value = true
+    error.value = ''
+    success.value = ''
+    result.value = null
+    currentQuery.value = queryText.value
+
+    const messages: Array<{ content: string; timestamp: number }> = []
+
+    console.log('[sendQuery] 调用apiService.sendQuery')
+    await apiService.sendQuery(
+      queryText.value,
+      appId.value,
+      (message) => {
+        console.log('[sendQuery] 收到消息:', message)
+        // 提取content字段以保持与最终结果一致
+        let displayContent = ''
+        if (message.data && typeof message.data === 'object' && 'content' in message.data) {
+          displayContent = message.data.content as string
+        } else {
+          displayContent = JSON.stringify(message)
+        }
+        messages.push({ content: displayContent, timestamp: Date.now() })
+        // 实时更新结果
+        result.value = messages
+      },
+      (state) => {
+        console.log('[sendQuery] 状态变更回调, 新状态:', state)
+        connectionState.value = state
+        isConnected.value = state === 'connected'
+      }
+    )
+
+    console.log('[sendQuery] 查询完成，消息数量:', messages.length)
+    success.value = '查询完成'
+    // 刷新历史记录
+    loadHistory()
+  } catch (err) {
+    console.error('[sendQuery] 查询失败:', err)
+    error.value = err instanceof Error ? err.message : '查询失败'
+  } finally {
+    console.log('[sendQuery] 结束，设置loading为false')
+    loading.value = false
+  }
+  console.log('=== [sendQuery] 发送查询结束 ===')
+}
+
+const clearAll = () => {
+  queryText.value = ''
+  result.value = null
+  currentQuery.value = ''
+  error.value = ''
+  success.value = ''
+}
+
+const clearResult = () => {
+  result.value = null
+  currentQuery.value = ''
+  error.value = ''
+  success.value = ''
+}
+
+const copyResult = async () => {
+  try {
+    await navigator.clipboard.writeText(formattedResult.value)
+    success.value = '结果已复制到剪贴板'
+  } catch (err) {
+    error.value = '复制失败'
+  }
+}
+
+const downloadResult = () => {
+  if (!result.value) return
+
+  const blob = new Blob([formattedResult.value], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `xunfei-semantic-${Date.now()}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+
+  success.value = '结果已下载'
+}
+
+const loadFromHistory = (item: HistoryRecord) => {
+  queryText.value = item.query
+  if (item.response) {
+    try {
+      result.value = JSON.parse(item.response)
+    } catch {
+      result.value = item.response
+    }
+  }
+}
+
+const clearHistory = () => {
+  if (apiService) {
+    apiService.clearHistory()
+    loadHistory()
+    success.value = '历史记录已清空'
+  }
+}
+
+const loadHistory = () => {
+  if (apiService) {
+    history.value = apiService.getHistory()
+  }
+}
+
+const loadConfig = () => {
+  appId.value = localStorage.getItem('xunfei-app-id') || 'd97460e4'
+  apiKey.value = localStorage.getItem('xunfei-api-key') || '33efdde7d2f0d9ea0cd86f4ebb10935e'
+  authId.value = localStorage.getItem('xunfei-auth-id') || 'wttest110322b327287039cd92b4c51n'
+}
+
+// 生命周期
+onMounted(async () => {
+  loadConfig()
+  loadHistory()
+
+  // 立即自动建立连接
+  console.log('讯飞语义请求模块已打开，自动建立连接...')
+  await autoConnect()
+
+  // 监听模块事件
+  eventBus.on('module:opened', (data: any) => {
+    if (data.id === 'xunfei-semantic-request') {
+      console.log('讯飞语义请求模块已激活')
+    }
+  })
+
+  eventBus.on('module:closed', (data: any) => {
+    if (data.id === 'xunfei-semantic-request') {
+      // 模块关闭时清理连接
+      handleDisconnect()
+    }
+  })
+})
+
+onUnmounted(() => {
+  // 清理WebSocket连接
+  handleDisconnect()
+})
+
+// 自动连接函数
+const autoConnect = async () => {
+  try {
+    console.log('开始自动连接流程...')
+    console.log('API配置:', {
+      appId: appId.value,
+      apiKey: apiKey.value ? `${apiKey.value.substring(0, 10)}...` : '空',
+      authId: authId.value
+    })
+
+    if (!appId.value || !apiKey.value || !authId.value) {
+      console.error('API配置不完整')
+      error.value = 'API配置不完整，请检查appId、apiKey和authId'
+      return
+    }
+
+    connecting.value = true
+    success.value = '正在自动建立连接...'
+    error.value = ''
+
+    // 创建API服务实例
+    apiService = new XunfeiApiService({
+      apiKey: apiKey.value,
+      authId: authId.value,
+      dataType: dataType.value,
+      interactMode: interactMode.value,
+      resultLevel: resultLevel.value,
+      scene: scene.value,
+      closeDelay: '100',
+      deviceId: '00000000000000000000000000000000',
+      speechClientVer: '1.6.0.1_beta',
+      startAsrNum: '1',
+      vin: 'Test_10000001',
+      voiceActiveDetect: 'inactive',
+      aiStatus: ''
+    })
+
+    console.log('API服务实例已创建，开始连接...')
+
+    // 设置连接超时
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('连接超时')), 10000)
+    })
+
+    const connectPromise = apiService.connect(
+      appId.value,
+      (state) => {
+        console.log('连接状态变更:', state)
+        connectionState.value = state
+        isConnected.value = state === 'connected'
+        connecting.value = state === 'connecting'
+
+        if (state === 'connected') {
+          success.value = '✅ 自动连接成功，可以开始查询'
+          console.log('自动连接成功！')
+          // 自动聚焦到输入框
+          setTimeout(() => {
+            queryInputRef.value?.focus()
+            console.log('已聚焦到输入框')
+          }, 500)
+          // 3秒后清除成功提示
+          setTimeout(() => {
+            if (success.value.includes('自动连接成功')) {
+              success.value = ''
+            }
+          }, 3000)
+        } else if (state === 'error') {
+          console.error('连接状态错误')
+          error.value = '❌ 自动连接失败，请检查网络或稍后重试'
+        }
+      }
+    )
+
+    // 等待连接完成或超时
+    await Promise.race([connectPromise, timeoutPromise])
+    console.log('连接流程完成')
+  } catch (err) {
+    console.error('自动连接发生错误:', err)
+    error.value = '❌ 自动连接失败: ' + (err instanceof Error ? err.message : '未知错误')
+    connectionState.value = 'error'
+    isConnected.value = false
+  } finally {
+    connecting.value = false
+    console.log('自动连接流程结束，connecting设为false')
+  }
+}
+</script>
+
+<style scoped>
+.btn-primary {
+  @apply px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed;
+}
+
+.card {
+  @apply bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+</style>
