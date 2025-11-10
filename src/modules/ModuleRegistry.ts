@@ -15,6 +15,15 @@ export interface ModuleConfig {
 
 export const moduleRegistry: ModuleConfig[] = [
   {
+    id: 'semantic-request',
+    name: '自研语义请求',
+    description: '发送文本获取语义请求结果',
+    icon: '🧠',
+    category: 'other',
+    version: '1.0.0',
+    author: '梧桐工具箱团队'
+  },
+  {
     id: 'file-manager',
     name: '文件管理器',
     description: '浏览和管理本地文件',
