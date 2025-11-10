@@ -389,6 +389,7 @@ const handleConnect = async () => {
     })
 
     // 初始化转换服务
+    console.log('[handleConnect] 初始化转换服务...')
     apiService.initConvertService({
       convertApiUrl: convertEndpoint.value,
       convertAuthToken: convertToken.value,
@@ -396,6 +397,7 @@ const handleConnect = async () => {
       convertSupplier: 0,
       convertVersion: 'lastest'
     })
+    console.log('[handleConnect] 转换服务初始化完成')
 
     await apiService.connect(
       appId.value,
@@ -639,6 +641,7 @@ const autoConnect = async () => {
     })
 
     // 初始化转换服务（使用完全不同的配置）
+    console.log('[autoConnect] 初始化转换服务...')
     apiService.initConvertService({
       convertApiUrl: convertEndpoint.value,
       convertAuthToken: convertToken.value,
@@ -646,6 +649,7 @@ const autoConnect = async () => {
       convertSupplier: 0,
       convertVersion: 'lastest'
     })
+    console.log('[autoConnect] 转换服务初始化完成')
 
     console.log('API服务实例已创建，开始连接...')
 

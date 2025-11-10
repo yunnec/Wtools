@@ -218,11 +218,13 @@ export class XunfeiApiService {
             console.log('[waitForResponse] 等待超时，处理已收集的消息')
 
             // 如果配置了转换服务，调用转换接口
+            console.log('[waitForResponse] 检查转换服务:', !!this.convertService, '消息数量:', messages.length)
             if (this.convertService && messages.length > 0) {
               try {
                 const lastMessage = messages[messages.length - 1]
                 if (lastMessage.content) {
-                  console.log('[waitForResponse] 开始调用转换接口')
+                  console.log('[waitForResponse] 开始调用转换接口, content长度:', lastMessage.content.length)
+                  console.log('[waitForResponse] content前100字符:', lastMessage.content.substring(0, 100))
                   const convertResult = await this.convertService.convert(lastMessage.content)
 
                   if (convertResult.success) {

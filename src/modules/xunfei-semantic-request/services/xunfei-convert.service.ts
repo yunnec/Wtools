@@ -36,8 +36,14 @@ export class XunfeiConvertService {
    */
   async convert(originData: string): Promise<ConvertResult> {
     try {
-      console.log('[ConvertService] 开始转换请求')
+      console.log('[ConvertService] === 开始转换请求 ===')
       console.log('[ConvertService] 原始数据长度:', originData.length)
+      console.log('[ConvertService] 原始数据前100字符:', originData.substring(0, 100))
+      console.log('[ConvertService] 转换服务配置:', {
+        apiUrl: this.config.convertApiUrl,
+        appId: this.config.convertApplicationId,
+        hasToken: !!this.config.convertAuthToken
+      })
 
       const requestBody = {
         appId: this.config.convertApplicationId,
