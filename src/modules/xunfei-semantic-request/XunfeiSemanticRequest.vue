@@ -83,45 +83,53 @@
           </div>
         </div>
 
-        <!-- API配置信息 -->
+        <!-- WebSocket配置信息（只读） -->
         <div class="card bg-blue-50 dark:bg-blue-900/20">
-          <h3 class="text-lg font-semibold mb-2 text-blue-900 dark:text-blue-100">API配置</h3>
+          <h3 class="text-lg font-semibold mb-2 text-blue-900 dark:text-blue-100">WebSocket配置</h3>
           <div class="space-y-2 text-sm font-mono">
             <div>
               <span class="text-gray-600 dark:text-gray-400">应用ID (appId):</span>
-              <div class="mt-1">
-                <input
-                  v-model="appId"
-                  type="text"
-                  class="w-full px-3 py-2 border border-gray-300 rounded bg-white dark:bg-gray-800 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="请输入应用ID"
-                />
+              <div class="mt-1 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded text-sm font-mono">
+                {{ appId }}
               </div>
             </div>
             <div>
               <span class="text-gray-600 dark:text-gray-400">API密钥 (APIKey):</span>
-              <div class="mt-1">
-                <input
-                  v-model="apiKey"
-                  type="password"
-                  class="w-full px-3 py-2 border border-gray-300 rounded bg-white dark:bg-gray-800 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="请输入API密钥"
-                />
+              <div class="mt-1 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded text-sm font-mono">
+                {{ apiKey.substring(0, 10) }}...
               </div>
             </div>
             <div>
               <span class="text-gray-600 dark:text-gray-400">认证ID (authId):</span>
-              <div class="mt-1">
-                <input
-                  v-model="authId"
-                  type="text"
-                  class="w-full px-3 py-2 border border-gray-300 rounded bg-white dark:bg-gray-800 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="请输入认证ID"
-                />
+              <div class="mt-1 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded text-sm font-mono">
+                {{ authId }}
               </div>
             </div>
             <div class="mt-3 text-xs text-gray-500">
-              💡 API密钥将保存在本地浏览器存储中，请注意安全
+              💡 WebSocket配置已固定，无需修改
+            </div>
+          </div>
+        </div>
+
+        <!-- 转换服务配置 -->
+        <div class="card bg-green-50 dark:bg-green-900/20">
+          <h3 class="text-lg font-semibold mb-2 text-green-900 dark:text-green-100">转换服务配置</h3>
+          <div class="space-y-2 text-sm">
+            <div>
+              <span class="text-gray-600 dark:text-gray-400">应用ID选择:</span>
+              <div class="mt-1">
+                <select
+                  v-model="selectedConvertAppId"
+                  class="w-full px-3 py-2 border border-gray-300 rounded bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                  <option v-for="option in appIdOptions" :key="option.id" :value="option.id">
+                    {{ option.name }} ({{ option.id.substring(0, 8) }}...)
+                  </option>
+                </select>
+              </div>
+            </div>
+            <div class="text-xs text-gray-500">
+              💡 选择要使用的转换服务应用ID
             </div>
           </div>
         </div>
@@ -259,6 +267,23 @@ const loading = ref(false)
 const error = ref('')
 const success = ref('')
 
+// 转换服务appId选项
+const appIdOptions = [
+  { id: '21pf2gigt3e56lb0jp8ff78wqig0hmuy', name: 'J90K' },
+  { id: 'ncnmfjxkw8unsqbghlivhyfp8652rsuk', name: '主线' },
+  { id: 'xsp7jms5lkvjrj2kipv7lm290rmjz9hl', name: '318-1' },
+  { id: '8dyf26xi9p8rsw1umkv8d6lrj7g0tgyi', name: '857-LS' },
+  { id: '5fae58wc2lerxw1iw2mvxvwd38baic3p', name: '236OTA' },
+  { id: 'js0y68yxr4k6pvsdpi5mvbpn9w6p26wd', name: '236ICA2OTA' },
+  { id: '8kuyqb19zf82m1jymnw41cg1qtdk47vx', name: '928' },
+  { id: 'd35014d19e99e200e32132f462885933', name: '928-2' },
+  { id: '9b3d4bz5foji1e5b6eebob4zskgj6q81', name: '成组化大模型' },
+  { id: 'bjbwuhspda5mv0w3g78qeqsixq8llo5t', name: 'B216高配' }
+]
+
+// 默认转换服务appId
+const selectedConvertAppId = ref(localStorage.getItem('xunfei-convert-appId') || '9b3d4bz5foji1e5b6eebob4zskgj6q81')
+
 // 输入框引用
 const queryInputRef = ref<HTMLTextAreaElement | null>(null)
 
@@ -280,7 +305,6 @@ const scene = ref('main')
 // 转换服务配置（使用完全不同的变量名避免冲突）
 const convertEndpoint = ref('https://voice.auto-pai.cn/voice-cloud/admin/app/command/manager/convert/test')
 const convertToken = ref('f5b13aca-ff50-49dc-9e73-f3543b9947a9')
-const convertAppId = ref('9b3d4bz5foji1e5b6eebob4zskgj6q81')
 
 // 历史记录
 const history = ref<HistoryRecord[]>([])
@@ -366,6 +390,11 @@ const characterCount = computed(() => {
   return formattedResult.value.length
 })
 
+// 监听selectedConvertAppId变化，保存到localStorage
+watch(selectedConvertAppId, (newId) => {
+  localStorage.setItem('xunfei-convert-appId', newId)
+})
+
 // 方法
 const getStateDescription = () => {
   const descriptions: Record<WebSocketConnectionState, string> = {
@@ -416,11 +445,11 @@ const handleConnect = async () => {
     apiService.initConvertService({
       convertApiUrl: convertEndpoint.value,
       convertAuthToken: convertToken.value,
-      convertApplicationId: convertAppId.value,
+      convertApplicationId: selectedConvertAppId.value,
       convertSupplier: 0,
       convertVersion: 'lastest'
     })
-    console.log('[handleConnect] 转换服务初始化完成')
+    console.log('[handleConnect] 转换服务初始化完成，appId:', selectedConvertAppId.value)
 
     await apiService.connect(
       appId.value,
@@ -674,11 +703,11 @@ const autoConnect = async () => {
     apiService.initConvertService({
       convertApiUrl: convertEndpoint.value,
       convertAuthToken: convertToken.value,
-      convertApplicationId: convertAppId.value,
+      convertApplicationId: selectedConvertAppId.value,
       convertSupplier: 0,
       convertVersion: 'lastest'
     })
-    console.log('[autoConnect] 转换服务初始化完成')
+    console.log('[autoConnect] 转换服务初始化完成，appId:', selectedConvertAppId.value)
 
     console.log('API服务实例已创建，开始连接...')
 
