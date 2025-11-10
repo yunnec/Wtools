@@ -292,16 +292,20 @@ let apiService: XunfeiApiService | null = null
 const formattedResult = computed(() => {
   if (!result.value) return ''
 
+  console.log('[formattedResult] result.value结构:', result.value)
+  console.log('[formattedResult] result.value类型:', typeof result.value)
+  console.log('[formattedResult] result.value是否为数组:', Array.isArray(result.value))
+
   // 如果结果是对象且包含convert字段，优先显示转换结果
   if (typeof result.value === 'object' && result.value !== null) {
     // 检查是否有转换结果
     if ('convert' in result.value) {
-      console.log('[formattedResult] 显示转换结果')
+      console.log('[formattedResult] 显示转换结果, convert:', result.value.convert)
       return JSON.stringify(result.value.convert, null, 2)
     }
     // 如果有语义结果数组
     else if ('semantic' in result.value && Array.isArray(result.value.semantic)) {
-      console.log('[formattedResult] 显示语义结果')
+      console.log('[formattedResult] 显示语义结果, semantic:', result.value.semantic)
       return result.value.semantic.map((msg: any) => {
         if (typeof msg === 'object' && msg !== null && 'content' in msg) {
           return msg.content as string
@@ -313,6 +317,7 @@ const formattedResult = computed(() => {
 
   // 如果是数组，直接显示
   if (Array.isArray(result.value)) {
+    console.log('[formattedResult] 显示数组结果, length:', result.value.length)
     return result.value.map(msg => {
       if (typeof msg === 'object' && msg !== null && 'content' in msg) {
         return msg.content as string
@@ -322,6 +327,7 @@ const formattedResult = computed(() => {
   }
 
   // 其他情况直接返回
+  console.log('[formattedResult] 显示其他类型结果')
   return JSON.stringify(result.value, null, 2)
 })
 
@@ -468,7 +474,7 @@ const sendQuery = async () => {
     const messages: Array<{ content: string; timestamp: number }> = []
 
     console.log('[sendQuery] 调用apiService.sendQuery')
-    await apiService.sendQuery(
+    const sendResult = await apiService.sendQuery(
       queryText.value,
       appId.value,
       (message) => {
@@ -481,7 +487,7 @@ const sendQuery = async () => {
           displayContent = JSON.stringify(message)
         }
         messages.push({ content: displayContent, timestamp: Date.now() })
-        // 实时更新结果
+        // 实时更新结果（先显示语义结果）
         result.value = messages
       },
       (state) => {
@@ -491,7 +497,13 @@ const sendQuery = async () => {
       }
     )
 
-    console.log('[sendQuery] 查询完成，消息数量:', messages.length)
+    console.log('[sendQuery] sendQuery返回结果:', sendResult)
+    // 使用sendQuery的返回值（包含转换结果）
+    if (sendResult) {
+      result.value = sendResult.response
+    }
+
+    console.log('[sendQuery] 查询完成，结果类型:', typeof result.value)
     success.value = '查询完成'
     // 刷新历史记录
     loadHistory()
