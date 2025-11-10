@@ -301,6 +301,23 @@ const formattedResult = computed(() => {
     // 检查是否有转换结果
     if ('convert' in result.value) {
       console.log('[formattedResult] 显示转换结果, convert:', result.value.convert)
+
+      // 特殊处理：转换结果中的data字段
+      if (result.value.convert.data) {
+        console.log('[formattedResult] 检测到data字段，解析显示')
+        const dataStr = result.value.convert.data as string
+
+        try {
+          // 尝试解析data中的JSON字符串
+          const parsedData = JSON.parse(dataStr)
+          return JSON.stringify(parsedData, null, 2)
+        } catch (error) {
+          // 如果解析失败，直接显示原始字符串
+          console.log('[formattedResult] data解析失败，显示原始内容')
+          return dataStr
+        }
+      }
+
       return JSON.stringify(result.value.convert, null, 2)
     }
     // 如果有语义结果数组
