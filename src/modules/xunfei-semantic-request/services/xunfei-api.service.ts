@@ -9,6 +9,7 @@ import {
   type WebSocketConnectionState,
   type WebSocketMessage
 } from './xunfei-websocket.service'
+import { XunfeiConvertService, type ConvertServiceConfig } from './xunfei-convert.service'
 
 export interface HistoryRecord {
   timestamp: number
@@ -33,12 +34,20 @@ export interface QueryResult {
 export class XunfeiApiService {
   private authService: XunfeiAuthService
   private wsService: XunfeiWebSocketService
+  private convertService: XunfeiConvertService | null = null
   private historyKey = 'xunfei-semantic-history'
   private maxHistoryItems = 20
 
   constructor(config: XunfeiConfig) {
     this.authService = new XunfeiAuthService(config)
     this.wsService = new XunfeiWebSocketService()
+  }
+
+  /**
+   * 初始化转换服务
+   */
+  initConvertService(convertConfig: ConvertServiceConfig): void {
+    this.convertService = new XunfeiConvertService(convertConfig)
   }
 
   /**
@@ -205,8 +214,39 @@ export class XunfeiApiService {
           // 先保存消息，再判断是否完成
           // 延迟1.5秒后如果没收到新消息就返回（避免无限等待）
           clearTimeout(timeoutId)
-          timeoutId = window.setTimeout(() => {
-            console.log('[waitForResponse] 等待超时，返回已收集的消息')
+          timeoutId = window.setTimeout(async () => {
+            console.log('[waitForResponse] 等待超时，处理已收集的消息')
+
+            // 如果配置了转换服务，调用转换接口
+            if (this.convertService && messages.length > 0) {
+              try {
+                const lastMessage = messages[messages.length - 1]
+                if (lastMessage.content) {
+                  console.log('[waitForResponse] 开始调用转换接口')
+                  const convertResult = await this.convertService.convert(lastMessage.content)
+
+                  if (convertResult.success) {
+                    console.log('[waitForResponse] 转换成功，结果:', convertResult.data)
+                    this.wsService.setCallbacks(originalCallbacks)
+                    resolve({
+                      response: {
+                        semantic: messages, // WebSocket原始响应
+                        convert: convertResult.data // 转换后的最终结果
+                      },
+                      status: 'success'
+                    })
+                    return
+                  } else {
+                    console.error('[waitForResponse] 转换失败:', convertResult.error)
+                  }
+                }
+              } catch (convertError) {
+                console.error('[waitForResponse] 转换异常:', convertError)
+              }
+            }
+
+            // 如果没有转换服务或转换失败，返回原始消息
+            console.log('[waitForResponse] 返回原始消息')
             this.wsService.setCallbacks(originalCallbacks)
             resolve({
               response: messages,
@@ -234,7 +274,7 @@ export class XunfeiApiService {
           this.wsService.setCallbacks(originalCallbacks)
           reject(new Error('WebSocket错误: ' + (error as any)?.message || '未知错误'))
         },
-        onClose: (event) => {
+        onClose: async (event) => {
           clearTimeout(timeoutId)
           // 不恢复回调，让连接状态保持disconnected
 
@@ -242,7 +282,32 @@ export class XunfeiApiService {
           if (messages.length === 0) {
             reject(new Error('连接已关闭，未收到响应'))
           } else {
-            // 如果有部分结果，返回它们
+            // 如果有部分结果，尝试调用转换服务
+            try {
+              if (this.convertService) {
+                const lastMessage = messages[messages.length - 1]
+                if (lastMessage.content) {
+                  console.log('[waitForResponse] onClose事件触发，开始转换')
+                  const convertResult = await this.convertService.convert(lastMessage.content)
+
+                  if (convertResult.success) {
+                    console.log('[waitForResponse] onClose转换成功')
+                    resolve({
+                      response: {
+                        semantic: messages,
+                        convert: convertResult.data
+                      },
+                      status: 'success'
+                    })
+                    return
+                  }
+                }
+              }
+            } catch (convertError) {
+              console.error('[waitForResponse] onClose转换异常:', convertError)
+            }
+
+            // 转换失败或未配置转换服务，返回原始消息
             resolve({
               response: messages,
               status: 'success'

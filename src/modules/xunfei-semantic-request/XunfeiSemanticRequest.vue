@@ -268,7 +268,7 @@ const isConnected = ref(false)
 const connecting = ref(false)
 const reconnectAttempts = ref(0)
 
-// API配置
+// WebSocket API配置
 const appId = ref('d97460e4')
 const apiKey = ref('33efdde7d2f0d9ea0cd86f4ebb10935e')
 const authId = ref('wttest110322b327287039cd92b4c51n')
@@ -276,6 +276,11 @@ const dataType = ref('text')
 const interactMode = ref('continuous')
 const resultLevel = ref('complete')
 const scene = ref('main')
+
+// 转换服务配置（使用完全不同的变量名避免冲突）
+const convertEndpoint = ref('https://voice.auto-pai.cn/voice-cloud/admin/app/command/manager/convert/test')
+const convertToken = ref('f5b13aca-ff50-49dc-9e73-f3543b9947a9')
+const convertAppId = ref('9b3d4bz5foji1e5b6eebob4zskgj6q81')
 
 // 历史记录
 const history = ref<HistoryRecord[]>([])
@@ -286,7 +291,27 @@ let apiService: XunfeiApiService | null = null
 // 计算属性
 const formattedResult = computed(() => {
   if (!result.value) return ''
-  // 如果结果是数组，只显示每个消息的 content 字段
+
+  // 如果结果是对象且包含convert字段，优先显示转换结果
+  if (typeof result.value === 'object' && result.value !== null) {
+    // 检查是否有转换结果
+    if ('convert' in result.value) {
+      console.log('[formattedResult] 显示转换结果')
+      return JSON.stringify(result.value.convert, null, 2)
+    }
+    // 如果有语义结果数组
+    else if ('semantic' in result.value && Array.isArray(result.value.semantic)) {
+      console.log('[formattedResult] 显示语义结果')
+      return result.value.semantic.map((msg: any) => {
+        if (typeof msg === 'object' && msg !== null && 'content' in msg) {
+          return msg.content as string
+        }
+        return JSON.stringify(msg, null, 2)
+      }).join('\n\n')
+    }
+  }
+
+  // 如果是数组，直接显示
   if (Array.isArray(result.value)) {
     return result.value.map(msg => {
       if (typeof msg === 'object' && msg !== null && 'content' in msg) {
@@ -295,12 +320,22 @@ const formattedResult = computed(() => {
       return JSON.stringify(msg, null, 2)
     }).join('\n\n')
   }
-  // 如果不是数组，直接返回
+
+  // 其他情况直接返回
   return JSON.stringify(result.value, null, 2)
 })
 
 const responseCount = computed(() => {
   if (!result.value) return 0
+  // 如果有转换结果，尝试从转换结果中获取消息数量
+  if (typeof result.value === 'object' && result.value !== null) {
+    if ('convert' in result.value) {
+      // 转换结果通常是一个对象，不是数组，返回1
+      return 1
+    } else if ('semantic' in result.value && Array.isArray(result.value.semantic)) {
+      return result.value.semantic.length
+    }
+  }
   return Array.isArray(result.value) ? result.value.length : 1
 })
 
@@ -351,6 +386,15 @@ const handleConnect = async () => {
       vin: 'Test_10000001',
       voiceActiveDetect: 'inactive',
       aiStatus: ''
+    })
+
+    // 初始化转换服务
+    apiService.initConvertService({
+      convertApiUrl: convertEndpoint.value,
+      convertAuthToken: convertToken.value,
+      convertApplicationId: convertAppId.value,
+      convertSupplier: 0,
+      convertVersion: 'lastest'
     })
 
     await apiService.connect(
@@ -592,6 +636,15 @@ const autoConnect = async () => {
       vin: 'Test_10000001',
       voiceActiveDetect: 'inactive',
       aiStatus: ''
+    })
+
+    // 初始化转换服务（使用完全不同的配置）
+    apiService.initConvertService({
+      convertApiUrl: convertEndpoint.value,
+      convertAuthToken: convertToken.value,
+      convertApplicationId: convertAppId.value,
+      convertSupplier: 0,
+      convertVersion: 'lastest'
     })
 
     console.log('API服务实例已创建，开始连接...')
