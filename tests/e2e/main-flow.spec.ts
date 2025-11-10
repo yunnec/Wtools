@@ -18,11 +18,9 @@ test.describe('梧桐工具箱 E2E测试', () => {
 
     // 检查工具模块卡片
     const toolCards = page.locator('.card')
-    await expect(toolCards).toHaveCount(10) // 9个工具 + 1个示例插件
+    await expect(toolCards).toHaveCount(8) // 7个工具 + 1个示例插件
 
     // 检查特定工具存在
-    await expect(page.locator('text=文件管理器')).toBeVisible()
-    await expect(page.locator('text=文本编辑器')).toBeVisible()
     await expect(page.locator('text=计算器')).toBeVisible()
     await expect(page.locator('text=JSON工具')).toBeVisible()
   })
@@ -169,7 +167,7 @@ test.describe('响应式设计测试', () => {
 
     // 检查工具卡片在移动端的布局
     const toolCards = page.locator('.card')
-    await expect(toolCards).toHaveCount(10)
+    await expect(toolCards).toHaveCount(9)
   })
 
   test('应该在平板端正常显示', async ({ page }) => {

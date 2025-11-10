@@ -9,8 +9,6 @@ class ConfigServiceImpl implements IConfigService {
     theme: 'light',
     language: 'zh-CN',
     modules: {
-      'file-manager': true,
-      'text-editor': true,
       'calculator': true,
     }
   }
@@ -59,8 +57,6 @@ class ConfigServiceImpl implements IConfigService {
       theme: 'light',
       language: 'zh-CN',
       modules: {
-        'file-manager': true,
-        'text-editor': true,
         'calculator': true,
       }
     }

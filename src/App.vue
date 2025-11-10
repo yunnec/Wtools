@@ -77,8 +77,6 @@ const filteredTabs = computed(() => {
 })
 
 const moduleComponents = {
-  'file-manager': defineAsyncComponent(() => import('./modules/file-manager/index.ts')),
-  'text-editor': defineAsyncComponent(() => import('./modules/text-editor/index.ts')),
   'calculator': defineAsyncComponent(() => import('./modules/calculator/index.ts')),
   'color-picker': defineAsyncComponent(() => import('./modules/color-picker/index.ts')),
   'json-tool': defineAsyncComponent(() => import('./modules/json-tool/index.ts')),
@@ -110,6 +108,6 @@ const switchToTab = async (moduleId) => {
 }
 
 onMounted(() => {
-  console.log('梧桐工具箱已启动 - 8个实用工具')
+  console.log('梧桐工具箱已启动 - 6个实用工具')
 })
 </script>

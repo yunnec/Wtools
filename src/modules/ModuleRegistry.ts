@@ -33,24 +33,6 @@ export const moduleRegistry: ModuleConfig[] = [
     author: '梧桐工具箱团队'
   },
   {
-    id: 'file-manager',
-    name: '文件管理器',
-    description: '浏览和管理本地文件',
-    icon: '📁',
-    category: 'file',
-    version: '1.0.0',
-    author: '梧桐工具箱团队'
-  },
-  {
-    id: 'text-editor',
-    name: '文本编辑器',
-    description: '编辑和查看文本文件',
-    icon: '✏️',
-    category: 'text',
-    version: '1.0.0',
-    author: '梧桐工具箱团队'
-  },
-  {
     id: 'calculator',
     name: '计算器',
     description: '执行基础和高级数学计算',
