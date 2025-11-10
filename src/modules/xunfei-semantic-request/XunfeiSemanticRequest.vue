@@ -83,6 +83,29 @@
           </div>
         </div>
 
+        <!-- 转换服务配置 -->
+        <div class="card bg-green-50 dark:bg-green-900/20">
+          <h3 class="text-lg font-semibold mb-2 text-green-900 dark:text-green-100">转换服务配置</h3>
+          <div class="space-y-2 text-sm">
+            <div>
+              <span class="text-gray-600 dark:text-gray-400">应用ID选择:</span>
+              <div class="mt-1">
+                <select
+                  v-model="selectedConvertAppId"
+                  class="w-full px-3 py-2 border border-gray-300 rounded bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                  <option v-for="option in appIdOptions" :key="option.id" :value="option.id">
+                    {{ option.name }} ({{ option.id.substring(0, 8) }}...)
+                  </option>
+                </select>
+              </div>
+            </div>
+            <div class="text-xs text-gray-500">
+              💡 选择要使用的转换服务应用ID
+            </div>
+          </div>
+        </div>
+
         <!-- WebSocket配置信息（只读） -->
         <div class="card bg-blue-50 dark:bg-blue-900/20">
           <h3 class="text-lg font-semibold mb-2 text-blue-900 dark:text-blue-100">WebSocket配置</h3>
@@ -107,29 +130,6 @@
             </div>
             <div class="mt-3 text-xs text-gray-500">
               💡 WebSocket配置已固定，无需修改
-            </div>
-          </div>
-        </div>
-
-        <!-- 转换服务配置 -->
-        <div class="card bg-green-50 dark:bg-green-900/20">
-          <h3 class="text-lg font-semibold mb-2 text-green-900 dark:text-green-100">转换服务配置</h3>
-          <div class="space-y-2 text-sm">
-            <div>
-              <span class="text-gray-600 dark:text-gray-400">应用ID选择:</span>
-              <div class="mt-1">
-                <select
-                  v-model="selectedConvertAppId"
-                  class="w-full px-3 py-2 border border-gray-300 rounded bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                >
-                  <option v-for="option in appIdOptions" :key="option.id" :value="option.id">
-                    {{ option.name }} ({{ option.id.substring(0, 8) }}...)
-                  </option>
-                </select>
-              </div>
-            </div>
-            <div class="text-xs text-gray-500">
-              💡 选择要使用的转换服务应用ID
             </div>
           </div>
         </div>
@@ -255,7 +255,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { eventBus } from '../../core/event'
 import { XunfeiApiService, type HistoryRecord, type WebSocketConnectionState, type WebSocketMessage } from './services/xunfei-api.service'
 
