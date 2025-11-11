@@ -78,6 +78,7 @@ const filteredTabs = computed(() => {
 
 const moduleComponents = {
   'shortcut-commands': defineAsyncComponent(() => import('./modules/shortcut-commands/index.ts')),
+  'semantic-compare': defineAsyncComponent(() => import('./modules/semantic-compare/index.ts')),
   'color-picker': defineAsyncComponent(() => import('./modules/color-picker/index.ts')),
   'json-tool': defineAsyncComponent(() => import('./modules/json-tool/index.ts')),
   'base64-tool': defineAsyncComponent(() => import('./modules/base64-tool/index.ts')),
@@ -106,6 +107,6 @@ const switchToTab = async (moduleId) => {
 }
 
 onMounted(() => {
-  console.log('梧桐工具箱已启动 - 6个实用工具')
+  console.log('梧桐工具箱已启动 - 7个实用工具')
 })
 </script>

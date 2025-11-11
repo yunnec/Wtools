@@ -24,6 +24,15 @@ export const moduleRegistry: ModuleConfig[] = [
     author: '梧桐工具箱团队'
   },
   {
+    id: 'semantic-compare',
+    name: '语义对比',
+    description: '对比讯飞和自研语义请求的结果',
+    icon: '⚖️',
+    category: 'other',
+    version: '1.0.0',
+    author: '梧桐工具箱团队'
+  },
+  {
     id: 'xunfei-semantic-request',
     name: '讯飞语义请求',
     description: '发送文本获取讯飞语义理解结果',
