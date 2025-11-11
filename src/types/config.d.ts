@@ -1,7 +1,12 @@
+import type { CustomCommand } from './adb-commands'
+
 export interface AppConfig {
   theme: 'light' | 'dark'
   language: string
   modules: Record<string, boolean>
+  customCommands: CustomCommand[]
+  adbCategoryOrder: string[]
+  appVersion: string
 }
 
 export interface ConfigService {
@@ -10,4 +15,5 @@ export interface ConfigService {
   getAll(): AppConfig
   reset(): void
   onChange(callback: (key: string, value: any) => void): void
+  updateAppVersion(newVersion: string): void
 }

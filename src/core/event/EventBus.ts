@@ -16,6 +16,7 @@ class EventBusImpl implements EventBus {
       this.handlers.set(event, new Set())
     }
     this.handlers.get(event)!.add(handler as EventHandler)
+    console.log(`[EventBus] 注册事件监听器: "${event}"`)
   }
 
   /**
@@ -32,10 +33,16 @@ class EventBusImpl implements EventBus {
    * 触发事件
    */
   emit<T>(event: string, data: T): void {
+    console.log(`[EventBus] 触发事件: "${event}", 监听器数量: ${this.handlers.get(event)?.size || 0}`)
     // 处理普通监听器
     const regularHandlers = this.handlers.get(event)
     if (regularHandlers) {
-      regularHandlers.forEach(handler => handler(data))
+      regularHandlers.forEach(handler => {
+        console.log(`[EventBus] 调用事件处理器: "${event}"`)
+        handler(data)
+      })
+    } else {
+      console.log(`[EventBus] 警告: 没有找到事件 "${event}" 的监听器`)
     }
 
     // 处理一次性监听器

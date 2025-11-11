@@ -1,6 +1,9 @@
 import type { AppConfig, ConfigService as IConfigService } from '../../types/config'
 import { eventBus } from '../event'
 
+// 应用版本号
+const APP_VERSION = '1.0.0'
+
 /**
  * 配置服务 - 管理应用配置，支持持久化和监听
  */
@@ -10,13 +13,17 @@ class ConfigServiceImpl implements IConfigService {
     language: 'zh-CN',
     modules: {
       'calculator': true,
-    }
+    },
+    customCommands: [],
+    adbCategoryOrder: [],
+    appVersion: APP_VERSION
   }
 
   private changeCallbacks: Array<(key: string, value: any) => void> = []
 
   constructor() {
     this.loadFromStorage()
+    this.checkAndMigrateVersion()
     eventBus.on('app:themeChanged', (theme: 'light' | 'dark') => {
       this.set('theme', theme)
     })
@@ -58,7 +65,10 @@ class ConfigServiceImpl implements IConfigService {
       language: 'zh-CN',
       modules: {
         'calculator': true,
-      }
+      },
+      customCommands: [],
+      adbCategoryOrder: [],
+      appVersion: APP_VERSION
     }
     this.saveToStorage()
     this.notifyChange('config', this.config)
@@ -80,10 +90,37 @@ class ConfigServiceImpl implements IConfigService {
       const stored = localStorage.getItem('wutong-config')
       if (stored) {
         const parsed = JSON.parse(stored)
+        // 合并配置，保留用户数据（向后兼容）
         this.config = { ...this.config, ...parsed }
+        console.log('[ConfigService] 已加载配置, 版本:', this.config.appVersion)
+      } else {
+        console.log('[ConfigService] 首次启动，使用默认配置')
       }
     } catch (error) {
       console.error('加载配置失败:', error)
+    }
+  }
+
+  /**
+   * 检查并迁移版本
+   */
+  private checkAndMigrateVersion(): void {
+    const currentVersion = this.config.appVersion
+    console.log(`[ConfigService] 当前配置版本: ${currentVersion}, 应用版本: ${APP_VERSION}`)
+
+    if (currentVersion !== APP_VERSION) {
+      console.log(`[ConfigService] 检测到版本变化 (${currentVersion} -> ${APP_VERSION})，执行数据迁移...`)
+
+      // 在这里可以添加迁移逻辑
+      // 目前我们只更新版本号，保留所有用户数据
+
+      // 更新版本号
+      this.config.appVersion = APP_VERSION
+      this.saveToStorage()
+
+      console.log('[ConfigService] 版本迁移完成，所有用户数据已保留')
+    } else {
+      console.log('[ConfigService] 版本匹配，无需迁移')
     }
   }
 
@@ -103,6 +140,15 @@ class ConfigServiceImpl implements IConfigService {
    */
   private notifyChange(key: string, value: any): void {
     this.changeCallbacks.forEach(callback => callback(key, value))
+  }
+
+  /**
+   * 更新应用版本号（用于测试版本迁移）
+   */
+  updateAppVersion(newVersion: string): void {
+    console.log(`[ConfigService] 手动更新版本: ${this.config.appVersion} -> ${newVersion}`)
+    this.config.appVersion = newVersion
+    this.saveToStorage()
   }
 }
 

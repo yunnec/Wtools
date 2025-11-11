@@ -1,10 +1,26 @@
 <template>
   <div class="shortcut-commands p-6">
     <div class="mb-6">
-      <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">ADB 快捷指令</h2>
-      <p class="text-gray-600 dark:text-gray-400">
-        点击按钮快速执行ADB命令，无需记忆复杂命令
-      </p>
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">ADB 快捷指令</h2>
+          <p class="text-gray-600 dark:text-gray-400">
+            点击按钮快速执行ADB命令，无需记忆复杂命令
+          </p>
+        </div>
+        <button
+          @click="showCustomManager = true"
+          class="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+        >
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+          </svg>
+          管理自定义命令
+          <span v-if="customCommandCount > 0" class="ml-2 px-2 py-0.5 bg-purple-700 text-white text-xs rounded-full">
+            {{ customCommandCount }}
+          </span>
+        </button>
+      </div>
     </div>
 
     <!-- 开发模式提示 -->
@@ -52,7 +68,7 @@
     <div class="mb-6">
       <div class="flex flex-wrap gap-2">
         <button
-          v-for="category in categories"
+          v-for="category in allCategories"
           :key="category"
           @click="selectedCategory = category"
           :class="selectedCategory === category
@@ -149,11 +165,23 @@
         </div>
       </div>
     </div>
+
+    <!-- 自定义命令管理模态框 -->
+    <CustomCommandManager
+      v-if="showCustomManager"
+      :visible="showCustomManager"
+      @close="showCustomManager = false"
+      @update="refreshCategoryOrder"
+    />
   </div>
 </template>
 
-<script setup>
-import { ref, computed, onMounted } from 'vue'
+<script setup lang="ts">
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import CustomCommandManager from './components/CustomCommandManager.vue'
+import { customCommandService } from './services/CustomCommandService'
+import { eventBus } from '@/core/event'
+import type { CustomCommand } from '@/types/adb-commands'
 
 // 响应式数据
 const searchQuery = ref('')
@@ -164,16 +192,65 @@ const showResult = ref(false)
 const resultMessage = ref('')
 const resultSuccess = ref(false)
 const isTauri = ref(false)
+const showCustomManager = ref(false)
+const customCommands = ref<CustomCommand[]>([])
+
+// 分类版本号（用于强制计算属性重新渲染）
+const categoryVersion = ref(0)
 
 // 分类列表
 const categories = ['全部', '应用管理', '服务管理', '设备信息', '文件操作', '日志调试', '网络调试', '系统管理']
 
-// ADB命令数据
-const commandGroups = ref([
-  {
-    category: '应用管理',
-    icon: '📱',
-    commands: [
+// 获取所有分类（包括自定义命令的分类）
+const allCategories = computed(() => {
+  console.log('[ShortcutCommands] allCategories 计算属性重新计算, version:', categoryVersion.value)
+  // 获取排序后的预设分类
+  const sortedCategories = customCommandService.getSortedCategories()
+
+  // 获取自定义命令的分类
+  const customCategories = [...new Set(customCommands.value.map(cmd => cmd.category))]
+
+  // 只添加不与预设分类重复的分类
+  const newCategories = customCategories.filter(cat => !sortedCategories.some(c => c.name === cat))
+
+  // 返回完整分类列表（包括"全部"）
+  return ['全部', ...sortedCategories.map(c => c.name), ...newCategories]
+})
+
+// 自定义命令数量
+const customCommandCount = computed(() => customCommands.value.length)
+
+// ADB命令数据 - 按排序后的分类创建分组
+const commandGroups = computed(() => {
+  // 依赖 categoryVersion 以强制重新计算
+  console.log('[ShortcutCommands] commandGroups 计算属性重新计算, version:', categoryVersion.value)
+
+  // 预设的分类定义
+  const categoryMap = {
+    '应用管理': '📱',
+    '服务管理': '⚙️',
+    '设备信息': 'ℹ️',
+    '文件操作': '📁',
+    '日志调试': '📝',
+    '网络调试': '🌐',
+    '系统管理': '🔧'
+  }
+
+  // 获取分类顺序
+  const categoryOrder = customCommandService.getCategoryOrder()
+
+  // 按顺序创建分组
+  return categoryOrder.map(category => ({
+    category,
+    icon: categoryMap[category] || '✨',
+    commands: getCommandsForCategory(category)
+  }))
+})
+
+// 获取特定分类的预设命令
+const getCommandsForCategory = (category: string) => {
+  const commands: Record<string, any[]> = {
+    '应用管理': [
       {
         name: '启动应用',
         description: '启动指定的应用',
@@ -204,23 +281,15 @@ const commandGroups = ref([
         description: '获取应用版本信息',
         command: 'adb shell dumpsys package com.tinnove.wecarspeech | findstr version'
       }
-    ]
-  },
-  {
-    category: '服务管理',
-    icon: '⚙️',
-    commands: [
+    ],
+    '服务管理': [
       {
         name: '启动服务',
         description: '启动指定服务并传递参数',
         command: 'adb shell am startservice -n com.tinnove.wecarspeech/com.tinnove.vrlogic.server.ExtraService --es nluStr "语音交互等多轮对话系统"'
       }
-    ]
-  },
-  {
-    category: '设备信息',
-    icon: 'ℹ️',
-    commands: [
+    ],
+    '设备信息': [
       {
         name: '列出设备',
         description: '查看所有连接的设备',
@@ -241,12 +310,8 @@ const commandGroups = ref([
         description: '获取完整的系统属性信息',
         command: 'adb shell getprop'
       }
-    ]
-  },
-  {
-    category: '文件操作',
-    icon: '📁',
-    commands: [
+    ],
+    '文件操作': [
       {
         name: '推送文件到设备',
         description: '将本地文件推送到设备',
@@ -267,12 +332,8 @@ const commandGroups = ref([
         description: '在设备上创建目录',
         command: 'adb shell mkdir /sdcard/test'
       }
-    ]
-  },
-  {
-    category: '日志调试',
-    icon: '📝',
-    commands: [
+    ],
+    '日志调试': [
       {
         name: '查看实时日志',
         description: '显示设备的实时日志',
@@ -298,12 +359,8 @@ const commandGroups = ref([
         description: '启动应用内的日志测试页面',
         command: 'adb shell am start -n com.tinnove.wecarspeech/com.tinnove.vrclient.test.LogTestActivity'
       }
-    ]
-  },
-  {
-    category: '网络调试',
-    icon: '🌐',
-    commands: [
+    ],
+    '网络调试': [
       {
         name: '启用TCP/IP模式',
         description: '在指定端口启用TCP/IP调试',
@@ -324,12 +381,8 @@ const commandGroups = ref([
         description: '将设备端口转发到本地',
         command: 'adb forward tcp:8080 tcp:8080'
       }
-    ]
-  },
-  {
-    category: '系统管理',
-    icon: '🔧',
-    commands: [
+    ],
+    '系统管理': [
       {
         name: '查看进程',
         description: '显示设备上运行的进程',
@@ -367,15 +420,50 @@ const commandGroups = ref([
       }
     ]
   }
-])
+
+  return commands[category] || []
+}
+
 
 // 过滤后的命令
 const filteredCommands = computed(() => {
-  let filtered = commandGroups.value
+  // 克隆预设命令分组
+  const allGroups = commandGroups.value.map(group => ({
+    ...group,
+    commands: [...group.commands]
+  }))
+
+  // 将自定义命令合并到对应的分类分组中
+  customCommands.value.forEach(cmd => {
+    const existingGroup = allGroups.find(g => g.category === cmd.category)
+    if (existingGroup) {
+      // 合并到现有分类
+      existingGroup.commands.push({
+        name: cmd.name,
+        description: cmd.description,
+        command: cmd.command,
+        // 标记这是自定义命令（可选）
+        isCustom: true
+      })
+    } else {
+      // 创建新的分类分组
+      allGroups.push({
+        category: cmd.category,
+        icon: cmd.icon || '✨',
+        commands: [{
+          name: cmd.name,
+          description: cmd.description,
+          command: cmd.command,
+          isCustom: true
+        }]
+      })
+    }
+  })
 
   // 按分类过滤
+  let filtered = allGroups
   if (selectedCategory.value !== '全部') {
-    filtered = filtered.filter(group => group.category === selectedCategory.value)
+    filtered = allGroups.filter(group => group.category === selectedCategory.value)
   }
 
   // 按搜索词过滤
@@ -430,12 +518,30 @@ const executeCommand = async (command) => {
   }
 }
 
-// 组件挂载
+// 加载自定义命令
+const loadCustomCommands = () => {
+  customCommands.value = customCommandService.getAll()
+}
+
+// 刷新分类排序（当排序更改时调用）
+const refreshCategoryOrder = () => {
+  console.log('[ShortcutCommands] refreshCategoryOrder 被调用')
+  // 强制重新计算分类
+  // 通过重新触发 allCategories 的计算属性
+  selectedCategory.value = '全部'
+  loadCustomCommands()
+  console.log('[ShortcutCommands] refreshCategoryOrder 完成')
+}
+
+// 监听分类顺序变化事件
+const handleCategoryOrderChange = () => {
+  console.log('[ShortcutCommands] handleCategoryOrderChange 收到事件!')
+  refreshCategoryOrder()
+}
 
 // 组件挂载
 onMounted(() => {
   // 检查是否在 Tauri 环境中
-  // 在 Tauri 2.0 中，可以通过检查 window.__TAURI__ 来判断
   if (typeof window !== 'undefined' && window.__TAURI__) {
     isTauri.value = true
     console.log('ADB快捷指令模块已加载 (Tauri模式)')
@@ -444,5 +550,31 @@ onMounted(() => {
     isTauri.value = false
     console.log('ADB快捷指令模块已加载 (Web演示模式)')
   }
+
+  // 加载自定义命令
+  loadCustomCommands()
+
+  // 监听分类顺序变化事件
+  console.log('[ShortcutCommands] 正在注册事件监听器: adb:categoryOrderChanged')
+  eventBus.on('adb:categoryOrderChanged', handleCategoryOrderChange)
+  console.log('[ShortcutCommands] 事件监听器注册完成')
+
+  // 监听配置变化事件（强制重新渲染）
+  console.log('[ShortcutCommands] 正在注册事件监听器: config:changed')
+  eventBus.on('config:changed', (data) => {
+    console.log('[ShortcutCommands] 收到配置变化事件:', data)
+    if (data.key === 'adb-category-order') {
+      console.log('[ShortcutCommands] 分类顺序已变化，递增版本号并强制刷新')
+      categoryVersion.value++
+      console.log('[ShortcutCommands] categoryVersion 变为:', categoryVersion.value)
+      loadCustomCommands()
+    }
+  })
+})
+
+// 组件卸载
+onUnmounted(() => {
+  // 移除事件监听器
+  eventBus.off('adb:categoryOrderChanged', handleCategoryOrderChange)
 })
 </script>
