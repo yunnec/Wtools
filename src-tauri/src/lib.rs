@@ -1,6 +1,5 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 use std::process::Command;
-use tauri::api::dialog;
 
 /**
  * 执行系统命令
@@ -37,11 +36,11 @@ async fn execute_command(command: &str) -> Result<String, String> {
 
 /**
  * 显示文件选择对话框
- * @param filters 文件过滤器
+ * @param _filters 文件过滤器
  * @return 选择的文件路径
  */
 #[tauri::command]
-async fn open_file_dialog(filters: Option<String>) -> Result<Option<String>, String> {
+async fn open_file_dialog(_filters: Option<String>) -> Result<Option<String>, String> {
     Ok(None)
 }
 
@@ -50,7 +49,6 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
-            greet,
             execute_command,
             open_file_dialog
         ])
