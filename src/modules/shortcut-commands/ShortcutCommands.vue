@@ -431,15 +431,15 @@ const executeCommand = async (command) => {
 }
 
 // 组件挂载
-onMounted(async () => {
+
+// 组件挂载
+onMounted(() => {
   // 检查是否在 Tauri 环境中
-  try {
-    // 尝试检查 Tauri API 是否可用
-    const { isTauri } = await import('@tauri-apps/api/core')
-    // 如果没有错误，说明在 Tauri 环境中
+  // 在 Tauri 2.0 中，可以通过检查 window.__TAURI__ 来判断
+  if (typeof window !== 'undefined' && window.__TAURI__) {
     isTauri.value = true
     console.log('ADB快捷指令模块已加载 (Tauri模式)')
-  } catch (error) {
+  } else {
     // 在 Web 开发模式
     isTauri.value = false
     console.log('ADB快捷指令模块已加载 (Web演示模式)')
