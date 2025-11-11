@@ -225,10 +225,10 @@ const hasAnyResult = computed(() => {
 })
 
 const getButtonText = () => {
-  if (loadingXunfei && loadingSelf) return '对比查询中...'
+  if (loadingXunfei && loadingSelf) return '查询中...'
   if (loadingXunfei) return '讯飞查询中...'
   if (loadingSelf) return '自研查询中...'
-  return '开始对比查询'
+  return '开始查询'
 }
 
 const formatXunfeiResult = computed(() => {
@@ -332,7 +332,7 @@ const connectXunfei = async () => {
   }
 }
 
-// 发送对比查询
+// 发送查询
 const sendCompare = async () => {
   if (!queryText.value.trim()) {
     return

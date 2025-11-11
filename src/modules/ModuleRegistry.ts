@@ -76,6 +76,15 @@ export const moduleRegistry: ModuleConfig[] = [
     category: 'convert',
     version: '1.0.0',
     author: '梧桐工具箱团队'
+  },
+  {
+    id: 'log-decompress',
+    name: '236日志解压',
+    description: '自动解密并解压车机日志文件',
+    icon: '📦',
+    category: 'file',
+    version: '1.0.0',
+    author: '梧桐工具箱团队'
   }
 ]
 
