@@ -85,6 +85,15 @@ export const moduleRegistry: ModuleConfig[] = [
     category: 'file',
     version: '1.0.0',
     author: '梧桐工具箱团队'
+  },
+  {
+    id: 'offline-semantic',
+    name: '离线语义解析',
+    description: '基于转换接口的离线语义分析工具',
+    icon: '🧠',
+    category: 'text',
+    version: '1.0.0',
+    author: '梧桐工具箱团队'
   }
 ]
 
