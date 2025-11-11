@@ -553,6 +553,14 @@ const sendQuery = async () => {
     success.value = '查询完成'
     // 刷新历史记录
     loadHistory()
+
+    // ✨ 新增功能：查询完成后2秒自动重连
+    console.log('[sendQuery] 设置2秒后自动重连')
+    setTimeout(() => {
+      console.log('[sendQuery] 2秒后开始自动重连')
+      success.value = '查询完成，2秒后自动重连...'
+      autoConnect()
+    }, 2000)
   } catch (err) {
     console.error('[sendQuery] 查询失败:', err)
     error.value = err instanceof Error ? err.message : '查询失败'
