@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "wutong-toolbox",
+  "productName": "梧桐工具箱",
   "version": "0.1.0",
   "identifier": "com.wangyu.wutong-toolbox",
   "build": {
