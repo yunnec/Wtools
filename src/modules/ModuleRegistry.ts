@@ -85,6 +85,15 @@ export const moduleRegistry: ModuleConfig[] = [
     category: 'image',
     version: '1.0.0',
     author: '梧桐工具箱团队'
+  },
+  {
+    id: 'text-diff',
+    name: '文本差异对比',
+    description: '对比两个文本的差异，高亮显示新增、删除和修改的内容',
+    icon: '📊',
+    category: 'text',
+    version: '1.0.0',
+    author: '梧桐工具箱团队'
   }
 ]
 
