@@ -24,10 +24,10 @@ export const moduleRegistry: ModuleConfig[] = [
     author: '梧桐工具箱团队'
   },
   {
-    id: 'semantic-compare',
-    name: '语义对比',
-    description: '对比讯飞和自研语义请求的结果',
-    icon: '⚖️',
+    id: 'semantic-request',
+    name: '自研语义请求',
+    description: '发送文本获取语义请求结果',
+    icon: '🧠',
     category: 'other',
     version: '1.0.0',
     author: '梧桐工具箱团队'
@@ -42,20 +42,11 @@ export const moduleRegistry: ModuleConfig[] = [
     author: '梧桐工具箱团队'
   },
   {
-    id: 'semantic-request',
-    name: '自研语义请求',
-    description: '发送文本获取语义请求结果',
+    id: 'offline-semantic',
+    name: '离线语义解析',
+    description: '基于转换接口的离线语义分析工具',
     icon: '🧠',
-    category: 'other',
-    version: '1.0.0',
-    author: '梧桐工具箱团队'
-  },
-  {
-    id: 'color-picker',
-    name: '颜色选择器',
-    description: '选择颜色、生成调色板、格式转换',
-    icon: '🎨',
-    category: 'image',
+    category: 'text',
     version: '1.0.0',
     author: '梧桐工具箱团队'
   },
@@ -78,20 +69,11 @@ export const moduleRegistry: ModuleConfig[] = [
     author: '梧桐工具箱团队'
   },
   {
-    id: 'log-decompress',
-    name: '236日志解压',
-    description: '自动解密并解压车机日志文件',
-    icon: '📦',
-    category: 'file',
-    version: '1.0.0',
-    author: '梧桐工具箱团队'
-  },
-  {
-    id: 'offline-semantic',
-    name: '离线语义解析',
-    description: '基于转换接口的离线语义分析工具',
-    icon: '🧠',
-    category: 'text',
+    id: 'color-picker',
+    name: '颜色选择器',
+    description: '选择颜色、生成调色板、格式转换',
+    icon: '🎨',
+    category: 'image',
     version: '1.0.0',
     author: '梧桐工具箱团队'
   }
