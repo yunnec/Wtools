@@ -173,6 +173,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { XunfeiApiService, type WebSocketConnectionState, type WebSocketMessage } from '../xunfei-semantic-request/services/xunfei-api.service'
+import { SemanticModuleStateService } from '../../core/services/SemanticModuleStateService'
 
 // 响应式数据
 const queryText = ref('')
@@ -479,8 +480,42 @@ const clearResults = () => {
   selfTime.value = 0
 }
 
+// 保存状态到localStorage
+const saveState = () => {
+  // 不保存loading状态，因为它只在操作进行时为true
+  SemanticModuleStateService.saveState('semantic-compare', {
+    queryText: queryText.value,
+    xunfeiResult: xunfeiResult.value,
+    xunfeiError: xunfeiError.value,
+    xunfeiTime: xunfeiTime.value,
+    selfResult: selfResult.value,
+    selfError: selfError.value,
+    selfTime: selfTime.value,
+    loadingXunfei: false, // 不保存加载状态
+    loadingSelf: false // 不保存加载状态
+  })
+}
+
+// 从localStorage恢复状态
+const restoreState = () => {
+  const savedState = SemanticModuleStateService.getState('semantic-compare')
+  if (savedState) {
+    queryText.value = savedState.queryText || ''
+    xunfeiResult.value = savedState.xunfeiResult || null
+    xunfeiError.value = savedState.xunfeiError || ''
+    xunfeiTime.value = savedState.xunfeiTime || 0
+    selfResult.value = savedState.selfResult || ''
+    selfError.value = savedState.selfError || ''
+    selfTime.value = savedState.selfTime || 0
+    console.log('已恢复语义对比模块状态')
+  }
+}
+
 // 生命周期
 onMounted(() => {
+  // 恢复状态
+  restoreState()
+
   // 自动连接讯飞服务
   connectXunfei()
 
@@ -491,6 +526,9 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  // 保存状态
+  saveState()
+
   // 清理讯飞连接
   if (xunfeiApiService) {
     xunfeiApiService.disconnect()

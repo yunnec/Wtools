@@ -36,7 +36,7 @@ export class XunfeiApiService {
   private wsService: XunfeiWebSocketService
   private convertService: XunfeiConvertService | null = null
   private historyKey = 'xunfei-semantic-history'
-  private maxHistoryItems = 20
+  private maxHistoryItems = 30
 
   constructor(config: XunfeiConfig) {
     this.authService = new XunfeiAuthService(config)

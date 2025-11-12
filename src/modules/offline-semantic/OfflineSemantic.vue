@@ -258,8 +258,8 @@ const convertText = async () => {
     })
 
     // 限制历史记录数量
-    if (history.value.length > 10) {
-      history.value = history.value.slice(0, 10)
+    if (history.value.length > 30) {
+      history.value = history.value.slice(0, 30)
     }
 
     eventBus.emit('offline-semantic:success', {

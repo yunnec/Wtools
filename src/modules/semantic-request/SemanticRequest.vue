@@ -148,8 +148,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, onUnmounted } from 'vue'
 import { eventBus } from '../../core/event'
+import { SemanticModuleStateService } from '../../core/services/SemanticModuleStateService'
 
 // 可选应用ID列表
 const appIdOptions = [
@@ -233,8 +234,8 @@ const sendRequest = async () => {
     })
 
     // 限制历史记录数量
-    if (history.value.length > 10) {
-      history.value = history.value.slice(0, 10)
+    if (history.value.length > 30) {
+      history.value = history.value.slice(0, 30)
     }
 
     eventBus.emit('semantic-request:success', {
@@ -297,9 +298,45 @@ const clearHistory = () => {
   }
 }
 
+// 保存状态到localStorage
+const saveState = () => {
+  SemanticModuleStateService.saveState('semantic-request', {
+    queryText: queryText.value,
+    result: result.value,
+    error: error.value,
+    responseTime: responseTime.value,
+    history: history.value,
+    selectedAppId: selectedAppId.value
+  })
+}
+
+// 从localStorage恢复状态
+const restoreState = () => {
+  const savedState = SemanticModuleStateService.getState('semantic-request')
+  if (savedState) {
+    queryText.value = savedState.queryText || ''
+    result.value = savedState.result || ''
+    error.value = savedState.error || ''
+    responseTime.value = savedState.responseTime || 0
+    history.value = savedState.history || []
+    if (savedState.selectedAppId) {
+      selectedAppId.value = savedState.selectedAppId
+    }
+    console.log('已恢复自研语义请求模块状态')
+  }
+}
+
 onMounted(() => {
   eventBus.on('semantic-request:open', () => {
     console.log('语义请求模块已打开')
   })
+
+  // 恢复状态
+  restoreState()
+})
+
+onUnmounted(() => {
+  // 保存状态
+  saveState()
 })
 </script>

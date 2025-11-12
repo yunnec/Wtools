@@ -258,6 +258,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { eventBus } from '../../core/event'
 import { XunfeiApiService, type HistoryRecord, type WebSocketConnectionState, type WebSocketMessage } from './services/xunfei-api.service'
+import { SemanticModuleStateService } from '../../core/services/SemanticModuleStateService'
 
 // 响应式数据
 const queryText = ref('')
@@ -640,10 +641,45 @@ const loadConfig = () => {
   authId.value = localStorage.getItem('xunfei-auth-id') || 'wttest110322b327287039cd92b4c51n'
 }
 
+// 保存状态到localStorage
+const saveState = () => {
+  // 不保存loading状态，因为它只在操作进行时为true
+  SemanticModuleStateService.saveState('xunfei-semantic-request', {
+    queryText: queryText.value,
+    currentQuery: currentQuery.value,
+    result: result.value,
+    loading: false, // 不保存加载状态
+    error: error.value,
+    success: success.value,
+    history: history.value,
+    selectedConvertAppId: selectedConvertAppId.value
+  })
+}
+
+// 从localStorage恢复状态
+const restoreState = () => {
+  const savedState = SemanticModuleStateService.getState('xunfei-semantic-request')
+  if (savedState) {
+    queryText.value = savedState.queryText || ''
+    currentQuery.value = savedState.currentQuery || ''
+    result.value = savedState.result || null
+    error.value = savedState.error || ''
+    success.value = savedState.success || ''
+    history.value = savedState.history || []
+    if (savedState.selectedConvertAppId) {
+      selectedConvertAppId.value = savedState.selectedConvertAppId
+    }
+    console.log('已恢复讯飞语义请求模块状态')
+  }
+}
+
 // 生命周期
 onMounted(async () => {
   loadConfig()
   loadHistory()
+
+  // 恢复状态
+  restoreState()
 
   // 立即自动建立连接
   console.log('讯飞语义请求模块已打开，自动建立连接...')
@@ -665,6 +701,9 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  // 保存状态
+  saveState()
+
   // 清理WebSocket连接
   handleDisconnect()
 })
