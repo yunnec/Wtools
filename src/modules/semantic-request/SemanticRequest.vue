@@ -192,7 +192,7 @@ watch(selectedAppId, (newId) => {
 })
 
 // 处理键盘事件：Enter发送，Ctrl+Enter换行
-const handleKeydown = (event: KeyboardEvent) => {
+const handleKeydown = (event) => {
   if (event.key === 'Enter') {
     if (event.ctrlKey) {
       // Ctrl+Enter：允许换行（默认行为）
