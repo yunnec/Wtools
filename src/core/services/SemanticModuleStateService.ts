@@ -44,6 +44,7 @@ export interface SemanticCompareState {
   selfTime: number
   loadingXunfei: boolean
   loadingSelf: boolean
+  selectedConvertAppId: string
 }
 
 export interface SemanticModuleState {

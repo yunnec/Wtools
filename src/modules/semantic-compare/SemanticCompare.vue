@@ -171,7 +171,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { XunfeiApiService, type WebSocketConnectionState, type WebSocketMessage } from '../xunfei-semantic-request/services/xunfei-api.service'
 import { SemanticModuleStateService } from '../../core/services/SemanticModuleStateService'
 
@@ -201,9 +201,13 @@ const resultLevel = ref('complete')
 const scene = ref('main')
 
 // 转换服务配置
-const selectedConvertAppId = ref('9b3d4bz5foji1e5b6eebob4zskgj6q81')
+// 从localStorage同步讯飞语义请求模块中的应用ID选择
+const selectedConvertAppId = ref(localStorage.getItem('xunfei-convert-appId') || '9b3d4bz5foji1e5b6eebob4zskgj6q81')
 const convertEndpoint = ref('https://voice.auto-pai.cn/voice-cloud/admin/app/command/manager/convert/test')
 const convertToken = ref('f5b13aca-ff50-49dc-9e73-f3543b9947a9')
+
+// 存储localStorage监听器引用
+let storageListener: ((e: StorageEvent) => void) | null = null
 
 // 自研API配置
 const selfAppId = ref('9b3d4bz5foji1e5b6eebob4zskgj6q81')
@@ -277,6 +281,13 @@ const formatXunfeiResult = computed(() => {
 
 const formatSelfResult = computed(() => {
   return selfResult.value || ''
+})
+
+// 监听selectedConvertAppId变化，保存到模块状态
+watch(selectedConvertAppId, (newId) => {
+  // 保存到localStorage（保持与讯飞语义请求模块一致）
+  localStorage.setItem('xunfei-convert-appId', newId)
+  console.log('[语义对比] 应用ID已更新:', newId)
 })
 
 // 初始化讯飞服务
@@ -492,7 +503,8 @@ const saveState = () => {
     selfError: selfError.value,
     selfTime: selfTime.value,
     loadingXunfei: false, // 不保存加载状态
-    loadingSelf: false // 不保存加载状态
+    loadingSelf: false, // 不保存加载状态
+    selectedConvertAppId: selectedConvertAppId.value
   })
 }
 
@@ -507,6 +519,17 @@ const restoreState = () => {
     selfResult.value = savedState.selfResult || ''
     selfError.value = savedState.selfError || ''
     selfTime.value = savedState.selfTime || 0
+
+    // 恢复selectedConvertAppId，优先使用localStorage中的值（来自讯飞语义请求模块）
+    const localStorageAppId = localStorage.getItem('xunfei-convert-appId')
+    if (localStorageAppId) {
+      selectedConvertAppId.value = localStorageAppId
+      console.log('[语义对比] 从localStorage恢复应用ID:', localStorageAppId)
+    } else if (savedState.selectedConvertAppId) {
+      selectedConvertAppId.value = savedState.selectedConvertAppId
+      console.log('[语义对比] 从模块状态恢复应用ID:', savedState.selectedConvertAppId)
+    }
+
     console.log('已恢复语义对比模块状态')
   }
 }
@@ -515,6 +538,22 @@ const restoreState = () => {
 onMounted(() => {
   // 恢复状态
   restoreState()
+
+  // 监听localStorage中xunfei-convert-appId的变化
+  storageListener = (e: StorageEvent) => {
+    if (e.key === 'xunfei-convert-appId') {
+      const newAppId = e.newValue || '9b3d4bz5foji1e5b6eebob4zskgj6q81'
+      selectedConvertAppId.value = newAppId
+      console.log('[语义对比] 检测到应用ID变化，已同步:', newAppId)
+
+      // 如果讯飞服务已连接，重新初始化转换服务
+      if (xunfeiApiService && xunfeiConnected.value) {
+        initConvertService()
+        console.log('[语义对比] 已重新初始化转换服务')
+      }
+    }
+  }
+  window.addEventListener('storage', storageListener)
 
   // 自动连接讯飞服务
   connectXunfei()
@@ -528,6 +567,12 @@ onMounted(() => {
 onUnmounted(() => {
   // 保存状态
   saveState()
+
+  // 移除localStorage监听器
+  if (storageListener) {
+    window.removeEventListener('storage', storageListener)
+    storageListener = null
+  }
 
   // 清理讯飞连接
   if (xunfeiApiService) {
