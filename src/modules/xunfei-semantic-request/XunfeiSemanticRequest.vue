@@ -75,11 +75,11 @@
             v-model="queryText"
             class="w-full h-24 p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
             placeholder="请输入要查询的语义文本..."
-            @keydown.enter.ctrl="sendQuery"
+            @keydown="handleKeydown"
           ></textarea>
           <div class="mt-2 text-sm text-gray-600 flex justify-between">
             <span>字符数: {{ queryText.length }}</span>
-            <span class="text-xs text-gray-500">提示: Ctrl+Enter 快速发送</span>
+            <span class="text-xs text-gray-500">Enter 发送 | Ctrl+Enter 换行</span>
           </div>
         </div>
 
@@ -483,6 +483,20 @@ const handleDisconnect = () => {
     connectionState.value = 'disconnected'
     isConnected.value = false
     success.value = '已断开连接'
+  }
+}
+
+// 处理键盘事件：Enter发送，Ctrl+Enter换行
+const handleKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Enter') {
+    if (event.ctrlKey) {
+      // Ctrl+Enter：允许换行（默认行为）
+      return
+    } else {
+      // Enter：发送请求
+      event.preventDefault()
+      sendQuery()
+    }
   }
 }
 
