@@ -174,6 +174,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { XunfeiApiService, type WebSocketConnectionState, type WebSocketMessage } from '../xunfei-semantic-request/services/xunfei-api.service'
 import { SemanticModuleStateService } from '../../core/services/SemanticModuleStateService'
+import { toastService } from '../../core/services/ToastService'
 
 // 响应式数据
 const queryText = ref('')
@@ -446,6 +447,7 @@ const querySelf = async () => {
 const copyXunfeiResult = async () => {
   try {
     await navigator.clipboard.writeText(formatXunfeiResult.value)
+    toastService.copySuccess("讯飞语义结果")
   } catch (err) {
     console.error('复制失败:', err)
   }
@@ -455,6 +457,7 @@ const copyXunfeiResult = async () => {
 const copySelfResult = async () => {
   try {
     await navigator.clipboard.writeText(formatSelfResult.value)
+    toastService.copySuccess("自研语义结果")
   } catch (err) {
     console.error('复制失败:', err)
   }

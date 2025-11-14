@@ -259,6 +259,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { eventBus } from '../../core/event'
 import { XunfeiApiService, type HistoryRecord, type WebSocketConnectionState, type WebSocketMessage } from './services/xunfei-api.service'
 import { SemanticModuleStateService } from '../../core/services/SemanticModuleStateService'
+import { toastService } from '../../core/services/ToastService'
 
 // 响应式数据
 const queryText = ref('')
@@ -588,9 +589,12 @@ const clearResult = () => {
 const copyResult = async () => {
   try {
     await navigator.clipboard.writeText(formattedResult.value)
-    success.value = '结果已复制到剪贴板'
+    toastService.copySuccess('语义解析结果')
+    success.value = ''
+    error.value = ''
   } catch (err) {
-    error.value = '复制失败'
+    toastService.copyError()
+    error.value = ''
   }
 }
 

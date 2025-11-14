@@ -216,6 +216,7 @@
 import { ref, computed, watch } from 'vue'
 import { DiffService } from './services/diff.service'
 import type { CompareMode, CompareGranularity, DiffLine } from './types'
+import { toastService } from "../../core/services/ToastService"
 
 // 响应式数据
 const originalText = ref('')
@@ -297,10 +298,10 @@ const copyResult = async () => {
       result = generateInlineText()
     }
     await navigator.clipboard.writeText(result)
-    alert('结果已复制到剪贴板')
+    toastService.copySuccess('文本对比结果')
   } catch (err) {
     console.error('复制失败:', err)
-    alert('复制失败，请手动选择复制')
+    toastService.copyError()
   }
 }
 

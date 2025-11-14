@@ -153,6 +153,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { eventBus } from '../../core/event'
+import { toastService } from "../../core/services/ToastService"
 
 // 可选应用ID列表
 const appIdOptions = [
@@ -307,10 +308,10 @@ const convertText = async () => {
 const copyResult = async () => {
   try {
     await navigator.clipboard.writeText(result.value)
-    alert('结果已复制到剪贴板')
+    toastService.copySuccess('离线语义解析结果')
   } catch (err) {
     console.error('复制失败:', err)
-    alert('复制失败，请手动选择复制')
+    toastService.copyError()
   }
 }
 

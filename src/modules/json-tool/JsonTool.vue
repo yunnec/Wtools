@@ -67,6 +67,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { eventBus } from '../../core/event'
+import { toastService } from '../../core/services/ToastService'
 
 const inputJson = ref('')
 const outputJson = ref('')
@@ -116,9 +117,13 @@ const clearAll = () => {
   success.value = ''
 }
 
-const copyOutput = () => {
-  navigator.clipboard.writeText(outputJson.value)
-  alert('已复制到剪贴板')
+const copyOutput = async () => {
+  try {
+    await navigator.clipboard.writeText(outputJson.value)
+    toastService.copySuccess('JSON结果')
+  } catch (err) {
+    toastService.copyError()
+  }
 }
 
 const stats = computed(() => {

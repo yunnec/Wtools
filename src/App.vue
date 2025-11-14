@@ -94,6 +94,9 @@
         <component v-else :is="currentModule" />
       </div>
     </main>
+
+    <!-- Toast 提示容器 -->
+    <ToastContainer />
   </div>
 </template>
 
@@ -102,6 +105,7 @@ import { ref, computed, onMounted } from 'vue'
 import { defineAsyncComponent } from 'vue'
 import { eventBus } from './core/event'
 import ThemeToggle from './components/ui/ThemeToggle.vue'
+import ToastContainer from './components/ui/ToastContainer.vue'
 import { moduleRegistry } from './modules/ModuleRegistry'
 
 const currentModule = ref(null)

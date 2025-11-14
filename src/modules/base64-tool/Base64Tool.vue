@@ -44,6 +44,7 @@
 <script setup>
 import { ref } from 'vue'
 import { eventBus } from '../../core/event'
+import { toastService } from '../../core/services/ToastService'
 
 const inputText = ref('')
 const outputText = ref('')
@@ -69,9 +70,13 @@ const clearAll = () => {
   outputText.value = ''
 }
 
-const copyOutput = () => {
-  navigator.clipboard.writeText(outputText.value)
-  alert('已复制')
+const copyOutput = async () => {
+  try {
+    await navigator.clipboard.writeText(outputText.value)
+    toastService.copySuccess('Base64编码结果')
+  } catch (err) {
+    toastService.copyError()
+  }
 }
 
 eventBus.on('base64-tool:open', () => {

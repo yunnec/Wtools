@@ -97,6 +97,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { eventBus } from '../../core/event'
+import { toastService } from '../../core/services/ToastService'
 
 const selectedColor = ref('#3b82f6')
 const rgb = ref({ r: 59, g: 130, b: 246, a: 1 })
@@ -160,9 +161,14 @@ const setColor = (color) => {
   selectedColor.value = color
 }
 
-const copyToClipboard = (text) => {
-  navigator.clipboard.writeText(text)
-  alert('已复制到剪贴板')
+const copyToClipboard = async (text) => {
+  try {
+    await navigator.clipboard.writeText(text)
+    toastService.copySuccess('颜色值')
+  } catch (err) {
+    console.error('复制失败:', err)
+    toastService.copyError()
+  }
 }
 
 onMounted(() => {
