@@ -117,6 +117,42 @@ class CustomCommandServiceImpl {
   }
 
   /**
+   * 插入或更新自定义命令（存在则更新，不存在则创建）
+   */
+  upsert(command: CustomCommand): CustomCommand {
+    const commands = this.getAll()
+    const index = commands.findIndex(cmd => cmd.id === command.id)
+
+    if (index !== -1) {
+      // 更新现有命令
+      const updated: CustomCommand = {
+        ...commands[index],
+        name: command.name,
+        description: command.description,
+        command: command.command,
+        category: command.category,
+        icon: command.icon,
+        presetId: command.presetId,
+        updatedAt: new Date().toISOString()
+      }
+      commands[index] = updated
+      this.saveAll(commands)
+      return updated
+    } else {
+      // 创建新命令
+      const now = new Date().toISOString()
+      const newCommand: CustomCommand = {
+        ...command,
+        createdAt: command.createdAt || now,
+        updatedAt: now
+      }
+      commands.push(newCommand)
+      this.saveAll(commands)
+      return newCommand
+    }
+  }
+
+  /**
    * 清空所有自定义命令
    */
   clear(): void {

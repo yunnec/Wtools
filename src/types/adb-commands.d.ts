@@ -4,6 +4,8 @@ export interface AdbCommand {
   name: string
   description: string
   command: string
+  presetId?: string  // 预定义命令的唯一标识（基于category+name+command生成）
+  isCustom?: boolean // 是否为自定义命令
 }
 
 export interface CommandGroup {
@@ -19,6 +21,7 @@ export interface CustomCommand {
   command: string
   category: string
   icon: string
+  presetId?: string  // 预定义命令的唯一标识（可选）
   createdAt: string
   updatedAt: string
 }

@@ -104,7 +104,13 @@
                 <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">{{ cmd.description }}</div>
               </div>
               <button
-                @click="executeCommand(cmd.command)"
+                  @click="editCommand(cmd, group.category)"
+                  class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                >
+                  ✏️ 编辑
+                </button>
+                <button
+                  @click="executeCommand(cmd.command)"
                 :disabled="isExecuting || !isTauri"
                 class="ml-4 px-4 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
               >
@@ -174,10 +180,56 @@
       @update="refreshCategoryOrder"
     />
   </div>
+  <!-- 编辑命令模态框 -->
+  <div v-if="showEditModal && editingCommand" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-lg w-full max-w-2xl">
+      <div class="p-6 border-b">
+        <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100">编辑命令</h3>
+      </div>
+      <div class="p-6">
+        <form @submit.prevent="saveEdit(editingForm)" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">名称</label>
+            <input v-model="editingForm.name" type="text" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">描述</label>
+            <input v-model="editingForm.description" type="text" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">命令</label>
+            <textarea v-model="editingForm.command" rows="3" required class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg font-mono"></textarea>
+          </div>
+          <div class="flex gap-3 pt-4">
+            <button type="submit" class="flex-1 bg-blue-500 text-white py-2 rounded-lg">保存</button>
+            <button type="button" @click="closeEditModal" class="flex-1 bg-gray-500 text-white py-2 rounded-lg">取消</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { customCommandService } from './services/CustomCommandService'
+import type { AdbCommand, CustomCommand, CustomCommandForm } from '@/types/adb-commands'
+import { toastService } from '@/core/services/ToastService'
+
+// 编辑功能相关变量
+const showEditModal = ref(false)
+const editingCommand = ref<AdbCommand | null>(null)
+const isEditingPreset = ref(false)
+const editingPresetId = ref<string | null>(null)
+const editingForm = ref<CustomCommandForm>({ name: '', description: '', command: '', category: '', icon: '' })
+
+const generatePresetId = (category: string, name: string, command: string): string => {
+  const str = `${category}-${name}-${command}`
+  // 使用 encodeURIComponent + btoa 处理 Unicode 字符（中文字符）
+  const encoded = btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (_, p1) =>
+    String.fromCharCode(parseInt(p1, 16))))
+  return 'preset-' + encoded.replace(/=/g, '').substring(0, 16)
+}
 import CustomCommandManager from './components/CustomCommandManager.vue'
 import { customCommandService } from './services/CustomCommandService'
 import { eventBus } from '@/core/event'
@@ -437,14 +489,34 @@ const filteredCommands = computed(() => {
   customCommands.value.forEach(cmd => {
     const existingGroup = allGroups.find(g => g.category === cmd.category)
     if (existingGroup) {
-      // 合并到现有分类
-      existingGroup.commands.push({
-        name: cmd.name,
-        description: cmd.description,
-        command: cmd.command,
-        // 标记这是自定义命令（可选）
-        isCustom: true
+      // 查找是否有相同的预设命令需要替换
+      const presetIndex = existingGroup.commands.findIndex((c, idx) => {
+        // 通过 presetId 匹配，或者通过名称+描述+命令匹配
+        const cmdId = cmd.presetId
+        const presetId = generatePresetId(cmd.category, c.name, c.command)
+        return (cmdId && c.presetId === cmdId) ||
+               (!c.isCustom && c.name === cmd.name && c.description === cmd.description && c.command === cmd.command)
       })
+
+      if (presetIndex !== -1) {
+        // 替换现有的预设命令
+        existingGroup.commands[presetIndex] = {
+          name: cmd.name,
+          description: cmd.description,
+          command: cmd.command,
+          isCustom: true,
+          presetId: cmd.presetId
+        }
+      } else {
+        // 添加新命令
+        existingGroup.commands.push({
+          name: cmd.name,
+          description: cmd.description,
+          command: cmd.command,
+          isCustom: true,
+          presetId: cmd.presetId
+        })
+      }
     } else {
       // 创建新的分类分组
       allGroups.push({
@@ -454,7 +526,8 @@ const filteredCommands = computed(() => {
           name: cmd.name,
           description: cmd.description,
           command: cmd.command,
-          isCustom: true
+          isCustom: true,
+          presetId: cmd.presetId
         }]
       })
     }
@@ -523,6 +596,68 @@ const loadCustomCommands = () => {
   customCommands.value = customCommandService.getAll()
 }
 
+// 编辑命令
+const editCommand = (cmd, category) => {
+  console.log('[ShortcutCommands] 编辑命令:', cmd.name)
+  editingCommand.value = cmd
+  isEditingPreset.value = !cmd.isCustom
+  editingPresetId.value = cmd.presetId || (isEditingPreset.value ? generatePresetId(category, cmd.name, cmd.command) : null)
+  editingForm.value = {
+    name: cmd.name,
+    description: cmd.description,
+    command: cmd.command,
+    category: category,
+    icon: '📱'
+  }
+  showEditModal.value = true
+}
+
+// 关闭编辑模态框
+const closeEditModal = () => {
+  showEditModal.value = false
+  editingCommand.value = null
+  isEditingPreset.value = false
+  editingPresetId.value = null
+  editingForm.value = { name: '', description: '', command: '', category: '', icon: '' }
+}
+
+// 保存编辑
+const saveEdit = (form) => {
+  try {
+    console.log('[ShortcutCommands] 保存编辑:', form.name)
+
+    const now = new Date().toISOString()
+    const customCmd = {
+      id: editingPresetId.value || `custom-${Date.now()}`,
+      name: form.name,
+      description: form.description,
+      command: form.command,
+      category: form.category,
+      icon: form.icon || '📱',
+      presetId: editingPresetId.value || null,
+      createdAt: editingCommand.value?.createdAt || now,
+      updatedAt: now
+    }
+
+    // 使用自定义命令服务保存
+    customCommandService.upsert(customCmd)
+    console.log('[ShortcutCommands] 命令保存成功')
+
+    // 显示成功提示
+    toastService.success('命令保存成功')
+
+    // 关闭模态框并刷新
+    closeEditModal()
+    loadCustomCommands()
+
+    // 触发分类顺序刷新
+    eventBus.emit('adb:categoryOrderChanged')
+  } catch (error) {
+    console.error('[ShortcutCommands] 保存失败:', error)
+    toastService.error('保存失败: ' + error.message)
+  }
+}
+
 // 刷新分类排序（当排序更改时调用）
 const refreshCategoryOrder = () => {
   console.log('[ShortcutCommands] refreshCategoryOrder 被调用')
@@ -568,8 +703,22 @@ onMounted(() => {
       categoryVersion.value++
       console.log('[ShortcutCommands] categoryVersion 变为:', categoryVersion.value)
       loadCustomCommands()
+    } else if (data.key === 'adb-custom-commands') {
+      console.log('[ShortcutCommands] 自定义命令已变化，刷新数据')
+      loadCustomCommands()
     }
   })
+})
+watch(showEditModal, (val) => {
+  if (val && editingCommand.value) {
+    editingForm.value = {
+      name: editingCommand.value.name,
+      description: editingCommand.value.description,
+      command: editingCommand.value.command,
+      category: '',
+      icon: '📱'
+    }
+  }
 })
 
 // 组件卸载
