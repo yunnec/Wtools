@@ -16,7 +16,7 @@
         <h3 class="text-lg font-semibold mb-4">输入 JSON</h3>
         <textarea
           v-model="inputJson"
-          class="w-full h-96 p-4 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+          class="w-full h-[800px] p-4 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
           placeholder="在此输入 JSON 数据..."
         ></textarea>
         <div v-if="error" class="mt-2 text-red-500 text-sm">
@@ -30,7 +30,7 @@
         <textarea
           :value="outputJson"
           readonly
-          class="w-full h-96 p-4 border border-gray-300 rounded bg-gray-50 font-mono text-sm"
+          class="w-full h-[800px] p-4 border border-gray-300 rounded bg-gray-50 font-mono text-sm"
         ></textarea>
         <div class="mt-2 text-green-500 text-sm" v-if="success">
           ✅ {{ success }}
