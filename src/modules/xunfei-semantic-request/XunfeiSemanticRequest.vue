@@ -325,11 +325,9 @@ const formattedResult = computed(() => {
   if (typeof result.value === 'object' && result.value !== null) {
     // 检查是否有转换结果
     if ('convert' in result.value) {
-      console.log('[formattedResult] 显示转换结果, convert:', result.value.convert)
 
       // 特殊处理：转换结果中的data字段
       if (result.value.convert.data) {
-        console.log('[formattedResult] 检测到data字段，解析显示')
         const dataStr = result.value.convert.data as string
 
         try {
@@ -338,7 +336,6 @@ const formattedResult = computed(() => {
           return JSON.stringify(parsedData, null, 2)
         } catch (error) {
           // 如果解析失败，直接显示原始字符串
-          console.log('[formattedResult] data解析失败，显示原始内容')
           return dataStr
         }
       }
@@ -347,8 +344,7 @@ const formattedResult = computed(() => {
     }
     // 如果有语义结果数组
     else if ('semantic' in result.value && Array.isArray(result.value.semantic)) {
-      console.log('[formattedResult] 显示语义结果, semantic:', result.value.semantic)
-      return result.value.semantic.map((msg: any) => {
+        return result.value.semantic.map((msg: any) => {
         if (typeof msg === 'object' && msg !== null && 'content' in msg) {
           return msg.content as string
         }
@@ -359,7 +355,6 @@ const formattedResult = computed(() => {
 
   // 如果是数组，直接显示
   if (Array.isArray(result.value)) {
-    console.log('[formattedResult] 显示数组结果, length:', result.value.length)
     return result.value.map(msg => {
       if (typeof msg === 'object' && msg !== null && 'content' in msg) {
         return msg.content as string
@@ -442,7 +437,6 @@ const handleConnect = async () => {
     })
 
     // 初始化转换服务
-    console.log('[handleConnect] 初始化转换服务...')
     apiService.initConvertService({
       convertApiUrl: convertEndpoint.value,
       convertAuthToken: convertToken.value,
@@ -450,7 +444,6 @@ const handleConnect = async () => {
       convertSupplier: 0,
       convertVersion: 'lastest'
     })
-    console.log('[handleConnect] 转换服务初始化完成，appId:', selectedConvertAppId.value)
 
     await apiService.connect(
       appId.value,
@@ -501,10 +494,6 @@ const handleKeydown = (event) => {
 }
 
 const sendQuery = async () => {
-  console.log('=== [sendQuery] 开始发送查询 ===')
-  console.log('[sendQuery] apiService存在:', !!apiService)
-  console.log('[sendQuery] isConnected:', isConnected.value)
-  console.log('[sendQuery] queryText:', queryText.value)
 
   if (!apiService) {
     console.error('[sendQuery] 错误: apiService不存在')
@@ -525,7 +514,6 @@ const sendQuery = async () => {
   }
 
   try {
-    console.log('[sendQuery] 设置加载状态')
     loading.value = true
     error.value = ''
     success.value = ''
@@ -534,12 +522,10 @@ const sendQuery = async () => {
 
     const messages: Array<{ content: string; timestamp: number }> = []
 
-    console.log('[sendQuery] 调用apiService.sendQuery')
     const sendResult = await apiService.sendQuery(
       queryText.value,
       appId.value,
       (message) => {
-        console.log('[sendQuery] 收到消息:', message)
         // 提取content字段以保持与最终结果一致
         let displayContent = ''
         if (message.data && typeof message.data === 'object' && 'content' in message.data) {
@@ -552,13 +538,11 @@ const sendQuery = async () => {
         result.value = messages
       },
       (state) => {
-        console.log('[sendQuery] 状态变更回调, 新状态:', state)
         connectionState.value = state
         isConnected.value = state === 'connected'
       }
     )
 
-    console.log('[sendQuery] sendQuery返回结果:', sendResult)
     // 使用sendQuery的返回值（包含转换结果）
     if (sendResult) {
       result.value = sendResult.response

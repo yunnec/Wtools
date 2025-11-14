@@ -495,7 +495,6 @@ const moveCategoryUp = (index: number) => {
   const [item] = newOrder.splice(index, 1)
   newOrder.splice(index - 1, 0, item)
   categoryOrder.value = newOrder
-  console.log('[CustomCommandManager] 移动后顺序:', newOrder)
 }
 
 const moveCategoryDown = (index: number) => {
@@ -505,7 +504,6 @@ const moveCategoryDown = (index: number) => {
   const [item] = newOrder.splice(index, 1)
   newOrder.splice(index + 1, 0, item)
   categoryOrder.value = newOrder
-  console.log('[CustomCommandManager] 移动后顺序:', newOrder)
 }
 
 const getCategoryIcon = (category: string) => {

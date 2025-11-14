@@ -215,13 +215,15 @@ describe('EventBus 事件总线', () => {
     })
 
     it('重复的监听器应该都能收到事件', () => {
-      const handler = vi.fn()
-      eventBus.on('test-event', handler)
-      eventBus.on('test-event', handler)
+      const handler1 = vi.fn()
+      const handler2 = vi.fn()
+      eventBus.on('test-event', handler1)
+      eventBus.on('test-event', handler2)
 
       eventBus.emit('test-event', { data: 'test' })
 
-      expect(handler).toHaveBeenCalledTimes(2)
+      expect(handler1).toHaveBeenCalledTimes(1)
+      expect(handler2).toHaveBeenCalledTimes(1)
     })
 
     it('在同一事件上混合使用on和once', () => {

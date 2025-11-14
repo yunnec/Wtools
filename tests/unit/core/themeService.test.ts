@@ -18,20 +18,20 @@ describe('ThemeService 主题服务', () => {
 
   describe('theme 属性', () => {
     it('应该默认为 light 主题', () => {
-      expect(themeService.theme.value).toBe('light')
+      expect(themeService.theme).toBe('light')
     })
 
     it('应该能够设置 dark 主题', () => {
       themeService.setTheme('dark')
-      expect(themeService.theme.value).toBe('dark')
+      expect(themeService.theme).toBe('dark')
     })
 
     it('应该保持主题状态', () => {
       themeService.setTheme('dark')
-      expect(themeService.theme.value).toBe('dark')
+      expect(themeService.theme).toBe('dark')
 
       // 多次读取应该返回相同值
-      expect(themeService.theme.value).toBe('dark')
+      expect(themeService.theme).toBe('dark')
     })
   })
 

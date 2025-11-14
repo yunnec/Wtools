@@ -62,7 +62,6 @@ export class XunfeiApiService {
   ): Promise<QueryResult> {
     console.log('[ApiService.sendQuery] 开始发送查询, query:', query)
     console.log('[ApiService.sendQuery] 当前连接状态:', this.wsService.getState())
-    console.log('[ApiService.sendQuery] isConnected:', this.wsService.isConnected())
 
     if (!query || query.trim().length === 0) {
       console.error('[ApiService.sendQuery] 错误: 查询内容为空')

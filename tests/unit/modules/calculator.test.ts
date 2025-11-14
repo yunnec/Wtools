@@ -174,7 +174,7 @@ describe('Calculator 计算器工具', () => {
       wrapper.vm.calculate()
 
       // 应该显示科学记数法或错误信息
-      expect(wrapper.vm.display).toMatch(/[0-9]/e|\*|Error/)
+      expect(wrapper.vm.display).toMatch(/[0-9]+|\*|Error/)
     })
 
     it('应该处理连续小数点', () => {
