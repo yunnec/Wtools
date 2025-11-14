@@ -138,6 +138,7 @@ const moduleComponents = {
   'xunfei-semantic-request': defineAsyncComponent(() => import('./modules/xunfei-semantic-request/index.ts')),
   'offline-semantic': defineAsyncComponent(() => import('./modules/offline-semantic/index.ts')),
   'text-diff': defineAsyncComponent(() => import('./modules/text-diff/index.ts')),
+  'timestamp-converter': defineAsyncComponent(() => import('./modules/timestamp-converter/index.ts')),
 }
 
 // 切换左侧栏展开/收起状态

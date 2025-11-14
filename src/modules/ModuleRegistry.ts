@@ -94,6 +94,15 @@ export const moduleRegistry: ModuleConfig[] = [
     category: 'text',
     version: '1.0.0',
     author: '梧桐工具箱团队'
+  },
+  {
+    id: 'timestamp-converter',
+    name: '时间戳转换',
+    description: '时间戳与日期时间相互转换，支持多种精度和时区',
+    icon: '⏰',
+    category: 'text',
+    version: '1.0.0',
+    author: '梧桐工具箱团队'
   }
 ]
 
